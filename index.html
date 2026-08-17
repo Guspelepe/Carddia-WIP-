@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Duelo de Cartas – Speed Duel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="game-container">
+    <h1 style="text-align: center;">Duelo de Cartas</h1>
+    <div id="series-info" style="text-align: center; margin-bottom: 10px; font-weight: bold;">
+      Melhor de 3: Jogador 1 <span id="score-p1">0</span> x <span id="score-p2">0</span> Jogador 2 (IA)
+    </div>
+
+    <!-- Área do Jogador 2 (IA) -->
+    <div class="player-area" id="player2-area">
+      <div class="player-info">
+        <span class="info-box hp" id="hp-p2">2500</span>
+        <span class="info-box" id="deck-p2">20</span>
+      </div>
+      <div>Jogador 2 (IA)</div>
+    </div>
+
+    <!-- Tabuleiro -->
+    <div class="board">
+      <!-- Zona de Magias/Armadilhas do Jogador 2 -->
+      <div class="row">
+        <div class="zone">
+          <div class="zone-label">Magias/Armadilhas do Jogador 2</div>
+          <div class="slots" id="magia-slots-p2"></div>
+        </div>
+      </div>
+      <!-- Zona de Monstros do Jogador 2 -->
+      <div class="row">
+        <div class="zone">
+          <div class="zone-label">Monstros do Jogador 2</div>
+          <div class="slots" id="monstro-slots-p2"></div>
+        </div>
+      </div>
+
+      <div style="border-top: 2px solid #7f8c8d;"></div>
+
+      <!-- Zona de Monstros do Jogador 1 -->
+      <div class="row">
+        <div class="zone">
+          <div class="zone-label">Monstros do Jogador 1</div>
+          <div class="slots" id="monstro-slots-p1"></div>
+        </div>
+      </div>
+      <!-- Zona de Magias/Armadilhas do Jogador 1 -->
+      <div class="row">
+        <div class="zone">
+          <div class="zone-label">Magias/Armadilhas do Jogador 1</div>
+          <div class="slots" id="magia-slots-p1"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Área do Jogador 1 (Humano) -->
+    <div class="player-area" id="player1-area">
+      <div class="player-info">
+        <span class="info-box hp" id="hp-p1">2500</span>
+        <span class="info-box" id="deck-p1">20</span>
+      </div>
+      <div>Jogador 1 (Você)</div>
+    </div>
+
+    <!-- Mão do Jogador 1 -->
+    <div id="hand-container">
+      <div class="hand-title">Sua Mão</div>
+      <div id="hand"></div>
+    </div>
+
+    <!-- Botões de ação -->
+    <div class="actions">
+      <button id="btn-atacar" disabled>Atacar</button>
+      <button id="btn-encerrar">Encerrar Turno</button>
+    </div>
+
+    <!-- Log de eventos -->
+    <div id="log"></div>
+  </div>
+
+  <!-- Preview da carta (hover) -->
+  <div id="card-preview" class="card-preview hidden"></div>
+
+  <!-- Modal para escolher posição de invocação -->
+  <div id="modal-position" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>Escolha a posição para invocar</h3>
+      <div class="modal-options">
+        <button id="btn-ataque" class="modal-option">Ataque</button>
+        <button id="btn-defesa" class="modal-option">Defesa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="cards.js"></script>
+  <script src="ai.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
