@@ -1,46 +1,45 @@
 // ai.js
-// IA simples com delays entre ações para melhor visualização.
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 async function aiTurn(estado) {
   const jogadorId = estado.jogadorAtual;
   const jogador = estado.jogadores[jogadorId];
+  const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  // 1. Invocar monstros (um por vez com delay)
+  // 1. Invocar monstros, um por vez com delay
   const monstrosNaMao = jogador.mao
     .map((carta, index) => ({ carta, index }))
-    .filter(item => item.carta.tipo === 'monstro');
+    .filter(item => item.carta.tipo === 'monstro')
+    .sort((a, b) => b.carta.atk - a.carta.atk);
 
   for (let item of monstrosNaMao) {
     const slotVazio = jogador.zonaMonstros.findIndex(slot => slot === null);
     if (slotVazio !== -1) {
       invocarMonstro(jogadorId, item.index, slotVazio, 'ataque');
-      await sleep(800);
+      await delay(800);
     } else {
       break;
     }
   }
 
-  // 2. Usar magias (se houver)
+  // 2. Usar magias
   const magiasRemocao = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'destruir_inimigo');
 
   if (magiasRemocao.length > 0) {
-    const inimigo = estado.jogadores[1];
-    let alvoIndex = -1, maiorAtk = 0;
+    const inimigoId = 1;
+    const inimigo = estado.jogadores[inimigoId];
+    let alvoIndex = -1;
+    let maiorAtk = 0;
     for (let i = 0; i < inimigo.zonaMonstros.length; i++) {
-      if (inimigo.zonaMonstros[i] && inimigo.zonaMonstros[i].atk > maiorAtk) {
-        maiorAtk = inimigo.zonaMonstros[i].atk;
+      const monstro = inimigo.zonaMonstros[i];
+      if (monstro && monstro.atk > maiorAtk) {
+        maiorAtk = monstro.atk;
         alvoIndex = i;
       }
     }
     if (alvoIndex !== -1 && maiorAtk >= 2000) {
       usarMagia(jogadorId, magiasRemocao[0].index, { tipo: 'inimigo', slot: alvoIndex });
-      await sleep(800);
+      await delay(800);
     }
   }
 
@@ -49,16 +48,18 @@ async function aiTurn(estado) {
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'buff_500');
 
   if (magiasBuff.length > 0) {
-    let alvoIndex = -1, maiorAtk = 0;
+    let alvoIndex = -1;
+    let maiorAtk = 0;
     for (let i = 0; i < jogador.zonaMonstros.length; i++) {
-      if (jogador.zonaMonstros[i] && jogador.zonaMonstros[i].atk > maiorAtk) {
-        maiorAtk = jogador.zonaMonstros[i].atk;
+      const monstro = jogador.zonaMonstros[i];
+      if (monstro && monstro.atk > maiorAtk) {
+        maiorAtk = monstro.atk;
         alvoIndex = i;
       }
     }
     if (alvoIndex !== -1) {
       usarMagia(jogadorId, magiasBuff[0].index, { tipo: 'proprio', slot: alvoIndex });
-      await sleep(800);
+      await delay(800);
     }
   }
 
@@ -67,7 +68,7 @@ async function aiTurn(estado) {
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'comprar_2');
   if (magiasCompra.length > 0) {
     usarMagia(jogadorId, magiasCompra[0].index, null);
-    await sleep(800);
+    await delay(800);
   }
 
   // 3. Baixar armadilhas
@@ -79,19 +80,16 @@ async function aiTurn(estado) {
     const slotVazio = jogador.zonaMagias.findIndex(slot => slot === null);
     if (slotVazio !== -1) {
       baixarArmadilha(jogadorId, item.index, slotVazio);
-      await sleep(800);
+      await delay(800);
     } else {
       break;
     }
   }
 
-  // 4. Atacar
-  if (typeof executarAtaquesAutomaticos === 'function') {
-    executarAtaquesAutomaticos(jogadorId);
-  } else {
-    console.error('executarAtaquesAutomaticos não definida');
+  // 4. Atacar (com animações e delays entre ataques)
+  if (!(estado.primeiroTurno && estado.jogadorAtual === jogadorId)) {
+    await executarAtaquesAutomaticos(jogadorId);
   }
-  await sleep(1000);
 
   // 5. Encerrar turno
   encerrarTurno();

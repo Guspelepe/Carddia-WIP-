@@ -1,39 +1,34 @@
 // cards.js
-// Banco de dados das 40 cartas do jogo.
-// Cada carta possui um tipo: 'monstro', 'magia' ou 'armadilha'.
-// Para monstros, definimos atk, def e custo (pontos de Fé necessários).
-// Para magias e armadilhas, definimos um efeito que será interpretado pelo game.js.
-
 const ALL_CARDS = [
   // ========== MONSTROS (26) ==========
-  // Monstros normais (sem efeito)
-  { id: 'm01', tipo: 'monstro', nome: 'Guerreiro de Pedra', atk: 1200, def: 1500, custo: 2, efeito: null },
-  { id: 'm02', tipo: 'monstro', nome: 'Dragão Jovem', atk: 1800, def: 1000, custo: 3, efeito: null },
-  { id: 'm03', tipo: 'monstro', nome: 'Cavaleiro Andante', atk: 1600, def: 1200, custo: 3, efeito: null },
-  { id: 'm04', tipo: 'monstro', nome: 'Lobo Cinzento', atk: 1000, def: 800, custo: 1, efeito: null },
-  { id: 'm05', tipo: 'monstro', nome: 'Golem de Ferro', atk: 2000, def: 2000, custo: 4, efeito: null },
-  { id: 'm06', tipo: 'monstro', nome: 'Águia Celeste', atk: 1500, def: 1000, custo: 3, efeito: null },
-  { id: 'm07', tipo: 'monstro', nome: 'Serpente Marinha', atk: 1700, def: 1600, custo: 3, efeito: null },
-  { id: 'm08', tipo: 'monstro', nome: 'Guerreiro Orc', atk: 1900, def: 1200, custo: 4, efeito: null },
-  { id: 'm09', tipo: 'monstro', nome: 'Mago Arcano', atk: 1400, def: 1000, custo: 2, efeito: null },
-  { id: 'm10', tipo: 'monstro', nome: 'Dragão Ancião', atk: 2500, def: 2000, custo: 5, efeito: null },
-  { id: 'm11', tipo: 'monstro', nome: 'Leão de Nemeia', atk: 2200, def: 1800, custo: 4, efeito: null },
-  { id: 'm12', tipo: 'monstro', nome: 'Gárgula', atk: 1300, def: 1400, custo: 2, efeito: null },
-  { id: 'm13', tipo: 'monstro', nome: 'Cavalo Alado', atk: 1700, def: 1300, custo: 3, efeito: null },
-  { id: 'm14', tipo: 'monstro', nome: 'Golem de Gelo', atk: 1800, def: 2000, custo: 4, efeito: null },
-  { id: 'm15', tipo: 'monstro', nome: 'Mago do Caos', atk: 1600, def: 1000, custo: 3, efeito: null },
-  { id: 'm16', tipo: 'monstro', nome: 'Cavaleiro Negro', atk: 2100, def: 1500, custo: 4, efeito: null },
-  { id: 'm17', tipo: 'monstro', nome: 'Elfo Arqueiro', atk: 1500, def: 1200, custo: 2, efeito: null },
-  { id: 'm18', tipo: 'monstro', nome: 'Dragão Bebê', atk: 1200, def: 700, custo: 1, efeito: null },
-  { id: 'm19', tipo: 'monstro', nome: 'Titã', atk: 2600, def: 2200, custo: 5, efeito: null },
-  { id: 'm20', tipo: 'monstro', nome: 'Sereia', atk: 1400, def: 1600, custo: 2, efeito: null },
-  { id: 'm21', tipo: 'monstro', nome: 'Centauro', atk: 1800, def: 1400, custo: 3, efeito: null },
-  { id: 'm22', tipo: 'monstro', nome: 'Múmia', atk: 1000, def: 1800, custo: 2, efeito: null },
-  { id: 'm23', tipo: 'monstro', nome: 'Esfinge', atk: 2300, def: 2000, custo: 5, efeito: null },
-  { id: 'm24', tipo: 'monstro', nome: 'Quimera', atk: 2400, def: 1800, custo: 5, efeito: null },
-  // Monstros com efeito (exemplo: quando morre, cura 500 de vida)
-  { id: 'm25', tipo: 'monstro', nome: 'Fada Curandeira', atk: 800, def: 800, custo: 1, efeito: 'quando_morre_ganha_500_vida' },
-  { id: 'm26', tipo: 'monstro', nome: 'Fênix Renascida', atk: 2000, def: 1500, custo: 4, efeito: 'quando_morre_ganha_500_vida' },
+  // Normais
+  { id: 'm01', tipo: 'monstro', nome: 'Guerreiro de Pedra', atk: 1200, def: 1500, custo: 0, efeito: null },
+  { id: 'm02', tipo: 'monstro', nome: 'Dragão Jovem', atk: 1800, def: 1000, custo: 0, efeito: null },
+  { id: 'm03', tipo: 'monstro', nome: 'Cavaleiro Andante', atk: 1600, def: 1200, custo: 0, efeito: null },
+  { id: 'm04', tipo: 'monstro', nome: 'Lobo Cinzento', atk: 1000, def: 800, custo: 0, efeito: null },
+  { id: 'm05', tipo: 'monstro', nome: 'Golem de Ferro', atk: 2000, def: 2000, custo: 0, efeito: null },
+  { id: 'm06', tipo: 'monstro', nome: 'Águia Celeste', atk: 1500, def: 1000, custo: 0, efeito: null },
+  { id: 'm07', tipo: 'monstro', nome: 'Serpente Marinha', atk: 1700, def: 1600, custo: 0, efeito: null },
+  { id: 'm08', tipo: 'monstro', nome: 'Guerreiro Orc', atk: 1900, def: 1200, custo: 0, efeito: null },
+  { id: 'm09', tipo: 'monstro', nome: 'Mago Arcano', atk: 1400, def: 1000, custo: 0, efeito: null },
+  { id: 'm10', tipo: 'monstro', nome: 'Dragão Ancião', atk: 2500, def: 2000, custo: 0, efeito: null },
+  { id: 'm11', tipo: 'monstro', nome: 'Leão de Nemeia', atk: 2200, def: 1800, custo: 0, efeito: null },
+  { id: 'm12', tipo: 'monstro', nome: 'Gárgula', atk: 1300, def: 1400, custo: 0, efeito: null },
+  { id: 'm13', tipo: 'monstro', nome: 'Cavalo Alado', atk: 1700, def: 1300, custo: 0, efeito: null },
+  { id: 'm14', tipo: 'monstro', nome: 'Golem de Gelo', atk: 1800, def: 2000, custo: 0, efeito: null },
+  { id: 'm15', tipo: 'monstro', nome: 'Mago do Caos', atk: 1600, def: 1000, custo: 0, efeito: null },
+  { id: 'm16', tipo: 'monstro', nome: 'Cavaleiro Negro', atk: 2100, def: 1500, custo: 0, efeito: null },
+  { id: 'm17', tipo: 'monstro', nome: 'Elfo Arqueiro', atk: 1500, def: 1200, custo: 0, efeito: null },
+  { id: 'm18', tipo: 'monstro', nome: 'Dragão Bebê', atk: 1200, def: 700, custo: 0, efeito: null },
+  { id: 'm19', tipo: 'monstro', nome: 'Titã', atk: 2600, def: 2200, custo: 0, efeito: null },
+  { id: 'm20', tipo: 'monstro', nome: 'Sereia', atk: 1400, def: 1600, custo: 0, efeito: null },
+  { id: 'm21', tipo: 'monstro', nome: 'Centauro', atk: 1800, def: 1400, custo: 0, efeito: null },
+  { id: 'm22', tipo: 'monstro', nome: 'Múmia', atk: 1000, def: 1800, custo: 0, efeito: null },
+  { id: 'm23', tipo: 'monstro', nome: 'Esfinge', atk: 2300, def: 2000, custo: 0, efeito: null },
+  { id: 'm24', tipo: 'monstro', nome: 'Quimera', atk: 2400, def: 1800, custo: 0, efeito: null },
+  // Com efeito
+  { id: 'm25', tipo: 'monstro', nome: 'Fada Curandeira', atk: 800, def: 800, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
+  { id: 'm26', tipo: 'monstro', nome: 'Fênix Renascida', atk: 2000, def: 1500, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
 
   // ========== MAGIAS (7) ==========
   { id: 's01', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },

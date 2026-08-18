@@ -1,12 +1,12 @@
 // game.js
 // Lógica principal do jogo, sem custo de Fé para invocações.
-// Inclui escolha de posição (ataque/defesa), preview de carta, batalha interativa.
+// Inclui batalha interativa, regras de dano Yu-Gi-Oh, sorteio e efeitos visuais.
 
-// ==================== ESTADO GLOBAL ====================
 const estado = {
-  fase: 'inicio',
+  fase: 'inicio', // 'inicio', 'main', 'batalha', 'fim'
   turno: 1,
   jogadorAtual: 1,
+  primeiroTurno: true,
   campeonato: {
     vitoriasJ1: 0,
     vitoriasJ2: 0,
@@ -22,14 +22,14 @@ const estado = {
   acaoPendente: null,
   atacanteSelecionado: null,
   hasAttacked: false,
-  animacaoUltimaAcao: null,
+  processandoAnimacao: false,
   log: []
 };
 
 function criarJogadorInicial(id) {
   return {
     id,
-    hp: 2500,
+    hp: 4000,
     deck: [],
     mao: [],
     zonaMonstros: [null, null, null],
@@ -88,41 +88,47 @@ function iniciarNovoDuelo() {
     comprarCarta(2);
   }
 
+  // Sorteio de quem começa
+  estado.jogadorAtual = Math.random() < 0.5 ? 1 : 2;
   estado.turno = 1;
-  estado.jogadorAtual = 1;
+  estado.primeiroTurno = true;
+  estado.hasAttacked = false;
   estado.fase = 'main';
   estado.cartaSelecionada = null;
   estado.acaoPendente = null;
   estado.atacanteSelecionado = null;
-  estado.hasAttacked = false;
-  estado.animacaoUltimaAcao = null;
+  estado.processandoAnimacao = false;
+
   render();
-  adicionarLog('--- Novo duelo iniciado! Jogador 1 começa (não pode atacar no primeiro turno). ---');
+  adicionarLog(`--- Novo duelo iniciado! Sorteio: Jogador ${estado.jogadorAtual} começa. ---`);
+  if (estado.jogadorAtual === 1) {
+    adicionarLog('Você não pode atacar no primeiro turno.');
+  } else {
+    setTimeout(() => aiTurn(estado), 1200);
+  }
 }
 
 // ==================== TROCA DE TURNOS ====================
 function encerrarTurno() {
   if (estado.fase === 'fim') return;
 
-  // Resetar estado de batalha
-  estado.fase = 'main';
-  estado.atacanteSelecionado = null;
-  estado.hasAttacked = false;
-  limparDestaques();
+  // Resetar flags de ataque
+  estado.jogadores[1].zonaMonstros.forEach(m => { if (m) m.jaAtacou = false; });
+  estado.jogadores[2].zonaMonstros.forEach(m => { if (m) m.jaAtacou = false; });
 
   // Passar para o outro jogador
   estado.jogadorAtual = estado.jogadorAtual === 1 ? 2 : 1;
   estado.turno++;
+  estado.primeiroTurno = false;
+  estado.hasAttacked = false;
+  estado.fase = 'main';
+  estado.cartaSelecionada = null;
+  estado.acaoPendente = null;
+  estado.atacanteSelecionado = null;
+  estado.processandoAnimacao = false;
+  limparDestaques();
 
   const jogador = estado.jogadores[estado.jogadorAtual];
-  // Resetar flag de ataque dos monstros
-  jogador.zonaMonstros.forEach(monstro => {
-    if (monstro) {
-      monstro.jaAtacou = false;
-    }
-  });
-
-  // Compra até completar 5 cartas
   if (!comprarCarta(estado.jogadorAtual, 5 - jogador.mao.length)) {
     return;
   }
@@ -135,9 +141,9 @@ function encerrarTurno() {
   }
 }
 
-// ==================== AÇÕES DO JOGADOR (FASE PRINCIPAL) ====================
+// ==================== AÇÕES DO JOGADOR ====================
 function selecionarCartaDaMao(index) {
-  if (estado.fase !== 'main' || estado.jogadorAtual !== 1) return;
+  if (estado.fase !== 'main' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return;
   const jogador = estado.jogadores[1];
   if (index >= jogador.mao.length) return;
   const carta = jogador.mao[index];
@@ -179,11 +185,10 @@ function selecionarCartaDaMao(index) {
   }
 }
 
-// Funções do modal de posição
+// Modal de posição
 function mostrarModalPosicao() {
   document.getElementById('modal-position').classList.remove('hidden');
 }
-
 function esconderModalPosicao() {
   document.getElementById('modal-position').classList.add('hidden');
 }
@@ -193,20 +198,18 @@ document.getElementById('btn-ataque').addEventListener('click', () => {
     estado.acaoPendente = { tipo: 'invocar', posicao: 'ataque' };
     esconderModalPosicao();
     destacarSlotsMonstroVazios(1);
-    adicionarLog(`Selecione um slot vazio para invocar ${estado.jogadores[1].mao[estado.cartaSelecionada].nome} em posição de ataque.`);
+    adicionarLog(`Selecione um slot vazio para invocar ${estado.jogadores[1].mao[estado.cartaSelecionada].nome} em ataque.`);
   }
 });
-
 document.getElementById('btn-defesa').addEventListener('click', () => {
   if (estado.cartaSelecionada !== null) {
     estado.acaoPendente = { tipo: 'invocar', posicao: 'defesa' };
     esconderModalPosicao();
     destacarSlotsMonstroVazios(1);
-    adicionarLog(`Selecione um slot vazio para invocar ${estado.jogadores[1].mao[estado.cartaSelecionada].nome} em posição de defesa.`);
+    adicionarLog(`Selecione um slot vazio para invocar ${estado.jogadores[1].mao[estado.cartaSelecionada].nome} em defesa.`);
   }
 });
 
-// Função genérica para invocar monstro
 function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
@@ -214,10 +217,8 @@ function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
   if (slotIndex < 0 || slotIndex > 2 || jogador.zonaMonstros[slotIndex] !== null) return false;
 
   jogador.mao.splice(maoIndex, 1);
-  const monstro = { ...carta, posicao, jaAtacou: false };
-  jogador.zonaMonstros[slotIndex] = monstro;
+  jogador.zonaMonstros[slotIndex] = { ...carta, posicao, jaAtacou: false };
   adicionarLog(`Jogador ${jogadorId} invocou ${carta.nome} na posição ${posicao}.`);
-
   verificarArmadilhaInvocacao(jogadorId, slotIndex);
 
   if (jogadorId === 1) {
@@ -227,12 +228,10 @@ function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
     esconderModalPosicao();
   }
   render();
-  // Animar a carta invocada
   animarCarta(jogadorId, 'monstro', slotIndex);
   return true;
 }
 
-// Baixar armadilha
 function baixarArmadilha(jogadorId, maoIndex, slotIndex) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
@@ -252,11 +251,24 @@ function baixarArmadilha(jogadorId, maoIndex, slotIndex) {
   return true;
 }
 
-// Usar magia
 function usarMagia(jogadorId, maoIndex, alvo) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
   if (!carta || carta.tipo !== 'magia') return false;
+
+  // Efeito de ativação da magia: animar a carta da mão se for humano
+  if (jogadorId === 1) {
+    const handCard = document.querySelector(`.hand-card[data-index="${maoIndex}"]`);
+    if (handCard) {
+      handCard.classList.add('magic-activating');
+      setTimeout(() => {
+        handCard.remove();
+      }, 800);
+    }
+  } else {
+    // Para IA, apenas removemos e mostramos efeito no alvo/geral
+    adicionarLog(`Jogador 2 ativou ${carta.nome}.`);
+  }
 
   jogador.mao.splice(maoIndex, 1);
 
@@ -267,7 +279,6 @@ function usarMagia(jogadorId, maoIndex, alvo) {
         if (monstro) {
           monstro.atk += 500;
           adicionarLog(`${monstro.nome} ganhou +500 de ATK.`);
-          // Animar o monstro buffado
           animarCarta(jogadorId, 'monstro', alvo.slot);
         }
       }
@@ -278,9 +289,14 @@ function usarMagia(jogadorId, maoIndex, alvo) {
         const inimigo = estado.jogadores[inimigoId];
         const monstro = inimigo.zonaMonstros[alvo.slot];
         if (monstro) {
-          inimigo.zonaMonstros[alvo.slot] = null;
-          adicionarLog(`${monstro.nome} foi destruído por Raios de Zeus.`);
-          aplicarEfeitoMorte(monstro, inimigoId);
+          // Animação de destruição: brilho no alvo
+          animarCarta(inimigoId, 'monstro', alvo.slot, 'destroy');
+          setTimeout(() => {
+            inimigo.zonaMonstros[alvo.slot] = null;
+            adicionarLog(`${monstro.nome} foi destruído por Raios de Zeus.`);
+            aplicarEfeitoMorte(monstro, inimigoId);
+            render();
+          }, 600);
         }
       }
       break;
@@ -299,18 +315,7 @@ function usarMagia(jogadorId, maoIndex, alvo) {
   return true;
 }
 
-// Animação de brilho na carta recém-colocada
-function animarCarta(jogadorId, zona, slotIndex) {
-  const elemento = document.querySelector(`[data-jogador="${jogadorId}"][data-zona="${zona}"][data-slot="${slotIndex}"] .card`);
-  if (elemento) {
-    elemento.classList.add('bright');
-    setTimeout(() => {
-      elemento.classList.remove('bright');
-    }, 1000);
-  }
-}
-
-// ==================== ARMADILHAS AUTOMÁTICAS ====================
+// ==================== ARMADILHAS ====================
 function verificarArmadilhaInvocacao(jogadorInvoker, slotIndex) {
   const invocador = estado.jogadores[jogadorInvoker];
   const oponenteId = jogadorInvoker === 1 ? 2 : 1;
@@ -322,11 +327,18 @@ function verificarArmadilhaInvocacao(jogadorInvoker, slotIndex) {
     const armadilha = oponente.zonaMagias[i];
     if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo && armadilha.efeito === 'armadilha_ira') {
       if (monstro.atk > 2000) {
-        invocador.zonaMonstros[slotIndex] = null;
-        oponente.zonaMagias[i] = null;
-        adicionarLog(`Armadilha "Ira do Submundo" ativada! ${monstro.nome} foi destruído.`);
-        aplicarEfeitoMorte(monstro, jogadorInvoker);
+        // Ativar armadilha: virar para cima e animar
+        oponente.zonaMagias[i].viradaParaBaixo = false;
         render();
+        animarCarta(oponenteId, 'magia', i, 'trap');
+        adicionarLog(`Armadilha "Ira do Submundo" ativada!`);
+        setTimeout(() => {
+          invocador.zonaMonstros[slotIndex] = null;
+          oponente.zonaMagias[i] = null;
+          adicionarLog(`${monstro.nome} foi destruído.`);
+          aplicarEfeitoMorte(monstro, jogadorInvoker);
+          render();
+        }, 800);
         break;
       }
     }
@@ -341,10 +353,10 @@ function aplicarEfeitoMorte(monstro, jogadorId) {
   }
 }
 
-// ==================== FASE DE BATALHA INTERATIVA ====================
+// ==================== BATALHA INTERATIVA ====================
 function iniciarBatalha() {
-  if (estado.fase !== 'main' || estado.jogadorAtual !== 1 || estado.hasAttacked) return;
-  if (estado.turno === 1 && estado.jogadorAtual === 1) {
+  if (estado.fase !== 'main' || estado.jogadorAtual !== 1 || estado.hasAttacked || estado.processandoAnimacao) return;
+  if (estado.primeiroTurno && estado.jogadorAtual === 1) {
     adicionarLog('Você não pode atacar no primeiro turno.');
     return;
   }
@@ -376,13 +388,12 @@ function destacarAtacantesDisponiveis(jogadorId) {
 }
 
 function selecionarAtacante(slotIndex) {
-  if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1) return;
+  if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return;
   const monstro = estado.jogadores[1].zonaMonstros[slotIndex];
   if (!monstro || monstro.posicao !== 'ataque' || monstro.jaAtacou) return;
 
   estado.atacanteSelecionado = slotIndex;
   limparDestaques();
-  // Destacar alvos: monstros inimigos e HP do jogador 2
   destacarAlvosInimigos();
   document.getElementById('hp-p2').classList.add('highlight-target');
   adicionarLog(`Monstro selecionado: ${monstro.nome}. Escolha um alvo.`);
@@ -398,78 +409,134 @@ function destacarAlvosInimigos() {
   });
 }
 
-function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
-  if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1) return;
+// Função para animar ataque: adiciona classes e depois resolve
+function animarAtaque(atacanteSlot, defensorSlot, jogadorAtacanteId, jogadorDefensorId) {
+  return new Promise(resolve => {
+    const atacanteElement = document.querySelector(`#monstro-slots-p${jogadorAtacanteId} .slot[data-slot="${atacanteSlot}"] .card`);
+    const defensorElement = defensorSlot !== null ? document.querySelector(`#monstro-slots-p${jogadorDefensorId} .slot[data-slot="${defensorSlot}"] .card`) : null;
+    if (atacanteElement) atacanteElement.classList.add('attacking');
+    if (defensorElement) defensorElement.classList.add('defending');
+    setTimeout(() => {
+      if (atacanteElement) atacanteElement.classList.remove('attacking');
+      if (defensorElement) defensorElement.classList.remove('defending');
+      resolve();
+    }, 600);
+  });
+}
+
+// Função para executar ataque do jogador humano (async)
+async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
+  if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return;
   const atacante = estado.jogadores[1].zonaMonstros[atacanteSlot];
   if (!atacante || atacante.jaAtacou) return;
 
   const defensorId = 2;
   const defensor = estado.jogadores[defensorId];
-  let ataqueResolvido = false;
 
   // Verificar armadilha escudo
   for (let j = 0; j < defensor.zonaMagias.length; j++) {
     const armadilha = defensor.zonaMagias[j];
     if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo && armadilha.efeito === 'armadilha_escudo') {
+      // Ativar escudo
+      defensor.zonaMagias[j].viradaParaBaixo = false;
+      render();
+      animarCarta(defensorId, 'magia', j, 'trap');
+      adicionarLog(`Armadilha "Escudo de Atenas" ativada!`);
+      await delay(800);
       atacante.posicao = 'defesa';
       defensor.zonaMagias[j] = null;
-      adicionarLog(`Armadilha "Escudo de Atenas" ativada! ${atacante.nome} foi colocado em defesa.`);
-      ataqueResolvido = true;
       atacante.jaAtacou = true;
-      break;
+      estado.atacanteSelecionado = null;
+      limparDestaques();
+      render();
+      verificarFimBatalha();
+      return;
     }
   }
 
-  if (!ataqueResolvido) {
-    if (alvoTipo === 'jogador') {
-      defensor.hp -= atacante.atk;
-      adicionarLog(`${atacante.nome} atacou diretamente! Jogador 2 perdeu ${atacante.atk} HP.`);
-      atacante.jaAtacou = true;
-      if (defensor.hp <= 0) {
-        finalizarDuelo(1, 'HP zerado');
-        return;
-      }
-    } else if (alvoTipo === 'monstro') {
-      const monstroDefensor = defensor.zonaMonstros[alvoSlot];
-      if (monstroDefensor) {
-        const atkValor = atacante.atk;
-        const defValor = monstroDefensor.posicao === 'ataque' ? monstroDefensor.atk : monstroDefensor.def;
-        adicionarLog(`${atacante.nome} (${atkValor}) vs ${monstroDefensor.nome} (${defValor})`);
+  // Animar ataque
+  estado.processandoAnimacao = true;
+  let alvoSlotDefensor = alvoTipo === 'monstro' ? alvoSlot : null;
+  await animarAtaque(atacanteSlot, alvoSlotDefensor, 1, 2);
 
-        if (atkValor > defValor) {
-          defensor.zonaMonstros[alvoSlot] = null;
-          adicionarLog(`${monstroDefensor.nome} foi destruído.`);
-          aplicarEfeitoMorte(monstroDefensor, defensorId);
-        } else if (atkValor < defValor) {
-          estado.jogadores[1].zonaMonstros[atacanteSlot] = null;
-          adicionarLog(`${atacante.nome} foi destruído.`);
-          aplicarEfeitoMorte(atacante, 1);
-        } else {
-          estado.jogadores[1].zonaMonstros[atacanteSlot] = null;
-          defensor.zonaMonstros[alvoSlot] = null;
-          adicionarLog(`Empate! ${atacante.nome} e ${monstroDefensor.nome} destruídos.`);
-          aplicarEfeitoMorte(atacante, 1);
-          aplicarEfeitoMorte(monstroDefensor, defensorId);
-        }
-        atacante.jaAtacou = true;
-      }
+  // Aplicar dano
+  if (alvoTipo === 'jogador') {
+    defensor.hp -= atacante.atk;
+    adicionarLog(`${atacante.nome} atacou diretamente! Jogador 2 perdeu ${atacante.atk} HP.`);
+    atacante.jaAtacou = true;
+    if (defensor.hp <= 0) {
+      finalizarDuelo(1, 'HP zerado');
+      return;
+    }
+  } else if (alvoTipo === 'monstro') {
+    const monstroDefensor = defensor.zonaMonstros[alvoSlot];
+    if (monstroDefensor) {
+      resolverBatalha(1, 2, atacanteSlot, alvoSlot);
+      atacante.jaAtacou = true;
     }
   }
 
+  estado.processandoAnimacao = false;
   estado.atacanteSelecionado = null;
   limparDestaques();
+  render();
+  verificarFimBatalha();
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function verificarFimBatalha() {
   const aindaPodeAtacar = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && !m.jaAtacou);
   if (aindaPodeAtacar) {
     destacarAtacantesDisponiveis(1);
     adicionarLog('Selecione outro monstro atacante ou encerre a batalha.');
   } else {
     adicionarLog('Todos os monstros atacaram. Encerre a batalha ou o turno.');
+    renderBotoes();
   }
-  render();
 }
 
-// Função para a IA atacar automaticamente
-function executarAtaquesAutomaticos(jogadorId) {
+function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slotDefensor) {
+  const atacante = estado.jogadores[jogadorAtacanteId].zonaMonstros[slotAtacante];
+  const defensor = estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor];
+  if (!atacante || !defensor) return;
+
+  if (defensor.posicao === 'ataque') {
+    const dif = atacante.atk - defensor.atk;
+    if (dif > 0) {
+      estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor] = null;
+      estado.jogadores[jogadorDefensorId].hp -= dif;
+      adicionarLog(`${defensor.nome} destruído! Jogador ${jogadorDefensorId} perdeu ${dif} HP.`);
+      aplicarEfeitoMorte(defensor, jogadorDefensorId);
+    } else if (dif === 0) {
+      estado.jogadores[jogadorAtacanteId].zonaMonstros[slotAtacante] = null;
+      estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor] = null;
+      adicionarLog(`Empate! ${atacante.nome} e ${defensor.nome} destruídos.`);
+      aplicarEfeitoMorte(atacante, jogadorAtacanteId);
+      aplicarEfeitoMorte(defensor, jogadorDefensorId);
+    } else {
+      estado.jogadores[jogadorAtacanteId].zonaMonstros[slotAtacante] = null;
+      estado.jogadores[jogadorAtacanteId].hp -= (-dif);
+      adicionarLog(`${atacante.nome} destruído! Jogador ${jogadorAtacanteId} perdeu ${-dif} HP.`);
+      aplicarEfeitoMorte(atacante, jogadorAtacanteId);
+    }
+  } else { // Defesa
+    const dif = atacante.atk - defensor.def;
+    if (dif > 0) {
+      estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor] = null;
+      adicionarLog(`${defensor.nome} destruído em defesa.`);
+      aplicarEfeitoMorte(defensor, jogadorDefensorId);
+    } else if (dif < 0) {
+      estado.jogadores[jogadorAtacanteId].hp -= (-dif);
+      adicionarLog(`${atacante.nome} não destruiu ${defensor.nome}. Jogador ${jogadorAtacanteId} perdeu ${-dif} HP.`);
+    }
+  }
+}
+
+// Função para ataques automáticos da IA (async)
+async function executarAtaquesAutomaticos(jogadorId) {
   const jogador = estado.jogadores[jogadorId];
   const inimigoId = jogadorId === 1 ? 2 : 1;
   const inimigo = estado.jogadores[inimigoId];
@@ -478,40 +545,31 @@ function executarAtaquesAutomaticos(jogadorId) {
     const monstro = jogador.zonaMonstros[i];
     if (!monstro || monstro.posicao !== 'ataque' || monstro.jaAtacou) continue;
 
-    let ataqueCancelado = false;
+    // Verificar armadilha escudo
     for (let j = 0; j < inimigo.zonaMagias.length; j++) {
       const armadilha = inimigo.zonaMagias[j];
       if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo && armadilha.efeito === 'armadilha_escudo') {
+        inimigo.zonaMagias[j].viradaParaBaixo = false;
+        render();
+        animarCarta(inimigoId, 'magia', j, 'trap');
+        adicionarLog(`Armadilha "Escudo de Atenas" ativada!`);
+        await delay(800);
         monstro.posicao = 'defesa';
         inimigo.zonaMagias[j] = null;
-        adicionarLog(`Armadilha "Escudo de Atenas" ativada! ${monstro.nome} foi colocado em defesa.`);
-        ataqueCancelado = true;
         monstro.jaAtacou = true;
+        render();
         break;
       }
     }
-    if (ataqueCancelado) continue;
+    if (monstro.jaAtacou) continue;
 
+    // Animar ataque
     const monstroDefensor = inimigo.zonaMonstros[i];
+    await animarAtaque(i, monstroDefensor ? i : null, jogadorId, inimigoId);
+
+    // Aplicar dano
     if (monstroDefensor) {
-      const atkValor = monstro.atk;
-      const defValor = monstroDefensor.posicao === 'ataque' ? monstroDefensor.atk : monstroDefensor.def;
-      adicionarLog(`${monstro.nome} (${atkValor}) vs ${monstroDefensor.nome} (${defValor})`);
-      if (atkValor > defValor) {
-        inimigo.zonaMonstros[i] = null;
-        adicionarLog(`${monstroDefensor.nome} foi destruído.`);
-        aplicarEfeitoMorte(monstroDefensor, inimigoId);
-      } else if (atkValor < defValor) {
-        jogador.zonaMonstros[i] = null;
-        adicionarLog(`${monstro.nome} foi destruído.`);
-        aplicarEfeitoMorte(monstro, jogadorId);
-      } else {
-        jogador.zonaMonstros[i] = null;
-        inimigo.zonaMonstros[i] = null;
-        adicionarLog(`Empate! ${monstro.nome} e ${monstroDefensor.nome} destruídos.`);
-        aplicarEfeitoMorte(monstro, jogadorId);
-        aplicarEfeitoMorte(monstroDefensor, inimigoId);
-      }
+      resolverBatalha(jogadorId, inimigoId, i, i);
     } else {
       inimigo.hp -= monstro.atk;
       adicionarLog(`${monstro.nome} atacou diretamente! Jogador ${inimigoId} perdeu ${monstro.atk} HP.`);
@@ -522,10 +580,10 @@ function executarAtaquesAutomaticos(jogadorId) {
     }
     monstro.jaAtacou = true;
     render();
+    await delay(800);
   }
 }
 
-// Encerrar fase de batalha
 function encerrarBatalha() {
   if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1) return;
   estado.fase = 'main';
@@ -546,11 +604,7 @@ function finalizarDuelo(vencedorId, motivo) {
   } else {
     estado.campeonato.vitoriasJ2++;
   }
-  estado.campeonato.historico.push({
-    rodada: estado.campeonato.rodadaAtual,
-    vencedor: vencedorId,
-    motivo
-  });
+  estado.campeonato.historico.push({ rodada: estado.campeonato.rodadaAtual, vencedor: vencedorId, motivo });
   renderPlacar();
 
   if (estado.campeonato.vitoriasJ1 >= 2 || estado.campeonato.vitoriasJ2 >= 2) {
@@ -608,9 +662,7 @@ function renderZonas() {
       if (monstro) {
         const cardDiv = document.createElement('div');
         cardDiv.className = 'card';
-        if (monstro.posicao === 'defesa') {
-          cardDiv.classList.add('defense');
-        }
+        if (monstro.posicao === 'defesa') cardDiv.classList.add('defense');
         cardDiv.innerHTML = `
           <div class="card-name">${monstro.nome}</div>
           <div class="card-stats">
@@ -664,9 +716,8 @@ function renderMao() {
     estado.jogadores[1].mao.forEach((carta, index) => {
       const cardDiv = document.createElement('div');
       cardDiv.className = 'hand-card';
-      if (estado.cartaSelecionada === index) {
-        cardDiv.classList.add('selected');
-      }
+      cardDiv.dataset.index = index;
+      if (estado.cartaSelecionada === index) cardDiv.classList.add('selected');
       let info = `<div class="card-name">${carta.nome}</div>`;
       if (carta.tipo === 'monstro') {
         info += `<div class="card-stats"><span>ATK ${carta.atk}</span><span>DEF ${carta.def}</span></div>`;
@@ -695,21 +746,21 @@ function renderMao() {
 
 function renderBotoes() {
   const btnAtacar = document.getElementById('btn-atacar');
-  const btnEncerrar = document.getElementById('btn-encerrar');
   const btnEncerrarBatalha = document.getElementById('btn-encerrar-batalha');
+  const btnEncerrar = document.getElementById('btn-encerrar');
 
-  if (estado.fase === 'main' && estado.jogadorAtual === 1) {
-    btnAtacar.disabled = !(estado.turno !== 1 && !estado.hasAttacked);
+  if (estado.fase === 'main' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
+    btnAtacar.disabled = !(estado.turno !== 1 && !estado.hasAttacked && !estado.primeiroTurno);
     btnEncerrar.disabled = false;
-    if (btnEncerrarBatalha) btnEncerrarBatalha.style.display = 'none';
-  } else if (estado.fase === 'batalha' && estado.jogadorAtual === 1) {
+    btnEncerrarBatalha.style.display = 'none';
+  } else if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
     btnAtacar.disabled = true;
-    btnEncerrar.disabled = true; // não pode encerrar turno durante batalha
-    if (btnEncerrarBatalha) btnEncerrarBatalha.style.display = 'inline-block';
+    btnEncerrar.disabled = true;
+    btnEncerrarBatalha.style.display = 'inline-block';
   } else {
     btnAtacar.disabled = true;
     btnEncerrar.disabled = true;
-    if (btnEncerrarBatalha) btnEncerrarBatalha.style.display = 'none';
+    btnEncerrarBatalha.style.display = 'none';
   }
 }
 
@@ -719,7 +770,7 @@ function renderLog() {
   logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// ==================== PREVIEW DA CARTA ====================
+// ==================== PREVIEW ====================
 function showPreview(carta) {
   const preview = document.getElementById('card-preview');
   preview.innerHTML = '';
@@ -794,22 +845,39 @@ function destacarMonstrosInimigos() {
   });
 }
 
+// ==================== ANIMAÇÃO GENÉRICA ====================
+function animarCarta(jogadorId, zona, slotIndex, tipo = 'bright') {
+  const selector = `#${zona}-slots-p${jogadorId} .slot[data-slot="${slotIndex}"] .card`;
+  const cardElement = document.querySelector(selector);
+  if (cardElement) {
+    let classe;
+    switch (tipo) {
+      case 'bright': classe = 'bright'; break;
+      case 'trap': classe = 'trap-activating'; break;
+      case 'magic': classe = 'magic-activating'; break;
+      default: classe = 'bright';
+    }
+    cardElement.classList.add(classe);
+    setTimeout(() => {
+      cardElement.classList.remove(classe);
+    }, 800);
+  }
+}
+
 // ==================== TRATAMENTO DE CLICKS ====================
 function handleSlotClick(jogadorId, zona, slotIndex) {
-  // Se estamos em fase de batalha, tratar cliques nos slots como seleção de atacante/alvo
-  if (estado.fase === 'batalha' && estado.jogadorAtual === 1) {
+  // Fase de batalha
+  if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
     if (jogadorId === 1 && zona === 'monstro') {
       if (estado.atacanteSelecionado === null) {
         selecionarAtacante(slotIndex);
+      } else if (estado.atacanteSelecionado === slotIndex) {
+        estado.atacanteSelecionado = null;
+        limparDestaques();
+        destacarAtacantesDisponiveis(1);
+        adicionarLog('Selecione outro monstro atacante.');
       } else {
-        if (estado.atacanteSelecionado === slotIndex) {
-          estado.atacanteSelecionado = null;
-          limparDestaques();
-          destacarAtacantesDisponiveis(1);
-          adicionarLog('Selecione outro monstro atacante.');
-        } else {
-          selecionarAtacante(slotIndex);
-        }
+        selecionarAtacante(slotIndex);
       }
     } else if (jogadorId === 2 && zona === 'monstro') {
       if (estado.atacanteSelecionado !== null) {
@@ -819,11 +887,10 @@ function handleSlotClick(jogadorId, zona, slotIndex) {
     return;
   }
 
-  if (estado.jogadorAtual !== 1 || estado.fase !== 'main') return;
-
+  // Fase principal
+  if (estado.jogadorAtual !== 1 || estado.fase !== 'main' || estado.processandoAnimacao) return;
   const jogador = estado.jogadores[1];
   const acao = estado.acaoPendente;
-
   if (!acao) return;
 
   if (acao.tipo === 'invocar') {
@@ -841,24 +908,21 @@ function handleSlotClick(jogadorId, zona, slotIndex) {
   }
 }
 
-// Evento para ataque direto: clicar no HP do jogador 2 durante seleção de alvo
+// Evento para ataque direto: clicar no HP do jogador 2
 document.getElementById('hp-p2').addEventListener('click', () => {
-  if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && estado.atacanteSelecionado !== null) {
+  if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && estado.atacanteSelecionado !== null && !estado.processandoAnimacao) {
     executarAtaque(estado.atacanteSelecionado, 'jogador', null);
   }
 });
 
-// ==================== EVENTOS DOS BOTÕES ====================
+// ==================== EVENTOS ====================
 document.getElementById('btn-atacar').addEventListener('click', iniciarBatalha);
-
+document.getElementById('btn-encerrar-batalha').addEventListener('click', encerrarBatalha);
 document.getElementById('btn-encerrar').addEventListener('click', () => {
-  if (estado.jogadorAtual === 1 && (estado.fase === 'main' || estado.fase === 'batalha')) {
+  if (estado.jogadorAtual === 1 && (estado.fase === 'main' || estado.fase === 'batalha') && !estado.processandoAnimacao) {
     encerrarTurno();
   }
 });
-
-// Botão "Encerrar Batalha" (agora no HTML)
-document.getElementById('btn-encerrar-batalha').addEventListener('click', encerrarBatalha);
 
 // ==================== INICIAR ====================
 iniciarCampeonato();

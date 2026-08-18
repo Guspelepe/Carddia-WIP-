@@ -7,6 +7,12 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Painel esquerdo com preview e log -->
+  <div id="left-panel">
+    <div id="card-preview" class="card-preview hidden"></div>
+    <div id="log"></div>
+  </div>
+
   <div id="game-container">
     <h1 style="text-align: center;">Duelo de Cartas</h1>
     <div id="series-info" style="text-align: center; margin-bottom: 10px; font-weight: bold;">
@@ -16,7 +22,7 @@
     <!-- Área do Jogador 2 (IA) -->
     <div class="player-area" id="player2-area">
       <div class="player-info">
-        <span class="info-box hp" id="hp-p2">2500</span>
+        <span class="info-box hp" id="hp-p2">4000</span>
         <span class="info-box" id="deck-p2">20</span>
       </div>
       <div>Jogador 2 (IA)</div>
@@ -24,14 +30,12 @@
 
     <!-- Tabuleiro -->
     <div class="board">
-      <!-- Zona de Magias/Armadilhas do Jogador 2 -->
       <div class="row">
         <div class="zone">
           <div class="zone-label">Magias/Armadilhas do Jogador 2</div>
           <div class="slots" id="magia-slots-p2"></div>
         </div>
       </div>
-      <!-- Zona de Monstros do Jogador 2 -->
       <div class="row">
         <div class="zone">
           <div class="zone-label">Monstros do Jogador 2</div>
@@ -41,14 +45,12 @@
 
       <div style="border-top: 2px solid #7f8c8d;"></div>
 
-      <!-- Zona de Monstros do Jogador 1 -->
       <div class="row">
         <div class="zone">
           <div class="zone-label">Monstros do Jogador 1</div>
           <div class="slots" id="monstro-slots-p1"></div>
         </div>
       </div>
-      <!-- Zona de Magias/Armadilhas do Jogador 1 -->
       <div class="row">
         <div class="zone">
           <div class="zone-label">Magias/Armadilhas do Jogador 1</div>
@@ -60,7 +62,7 @@
     <!-- Área do Jogador 1 (Humano) -->
     <div class="player-area" id="player1-area">
       <div class="player-info">
-        <span class="info-box hp" id="hp-p1">2500</span>
+        <span class="info-box hp" id="hp-p1">4000</span>
         <span class="info-box" id="deck-p1">20</span>
       </div>
       <div>Jogador 1 (Você)</div>
@@ -78,13 +80,7 @@
       <button id="btn-encerrar-batalha" style="display:none;">Encerrar Batalha</button>
       <button id="btn-encerrar">Encerrar Turno</button>
     </div>
-
-    <!-- Log de eventos -->
-    <div id="log"></div>
   </div>
-
-  <!-- Preview da carta (hover) -->
-  <div id="card-preview" class="card-preview hidden"></div>
 
   <!-- Modal para escolher posição de invocação -->
   <div id="modal-position" class="modal-overlay hidden">
