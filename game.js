@@ -1,9 +1,8 @@
 // game.js
-// Lógica principal do jogo, sem custo de Fé para invocações.
-// Inclui batalha interativa, regras de dano Yu-Gi-Oh, sorteio e efeitos visuais.
+let nivelDificuldade = 'medio'; // lido do dropdown antes de iniciar
 
 const estado = {
-  fase: 'inicio', // 'inicio', 'main', 'batalha', 'fim'
+  fase: 'inicio',
   turno: 1,
   jogadorAtual: 1,
   primeiroTurno: true,
@@ -33,7 +32,8 @@ function criarJogadorInicial(id) {
     deck: [],
     mao: [],
     zonaMonstros: [null, null, null],
-    zonaMagias: [null, null, null]
+    zonaMagias: [null, null, null],
+    cemiterio: []
   };
 }
 
@@ -53,7 +53,19 @@ function comprarCarta(jogadorId, quantidade = 1) {
       finalizarDuelo(jogadorId === 1 ? 2 : 1, 'Deck vazio');
       return false;
     }
-    const carta = jogador.deck.shift();
+    let carta;
+    if (jogadorId === 2 && nivelDificuldade === 'dificil' && estado.fase !== 'inicio') {
+      // IA difícil escolhe a melhor carta do deck
+      carta = escolherCartaParaIA(jogadorId);
+      const idx = jogador.deck.indexOf(carta);
+      if (idx !== -1) {
+        jogador.deck.splice(idx, 1);
+      } else {
+        carta = jogador.deck.shift(); // fallback
+      }
+    } else {
+      carta = jogador.deck.shift();
+    }
     if (jogador.mao.length < 5) {
       jogador.mao.push(carta);
     }
@@ -61,13 +73,86 @@ function comprarCarta(jogadorId, quantidade = 1) {
   return true;
 }
 
+function escolherCartaParaIA(jogadorId) {
+  const jogador = estado.jogadores[jogadorId];
+  const deck = jogador.deck;
+  const inimigo = estado.jogadores[jogadorId === 1 ? 2 : 1];
+  let melhorCarta = deck[0];
+  let melhorPontuacao = -Infinity;
+
+  for (const carta of deck) {
+    let pontos = 0;
+    if (carta.tipo === 'monstro') {
+      pontos += carta.atk / 100;
+      if (carta.efeito === 'ao_invocar_causa_500_dano_direto') pontos += 5;
+      if (carta.efeito === 'dano_perfurante') pontos += 3;
+    } else if (carta.tipo === 'magia') {
+      if (carta.efeito === 'curar_2000' && jogador.hp < 2500) pontos += 10;
+      if (carta.efeito === 'destruir_inimigo' && inimigo.zonaMonstros.some(m => m && m.atk > 2000)) pontos += 12;
+      if (carta.efeito === 'comprar_2' && jogador.mao.length < 3) pontos += 8;
+    } else if (carta.tipo === 'armadilha') {
+      pontos += 6;
+    }
+    if (pontos > melhorPontuacao) {
+      melhorPontuacao = pontos;
+      melhorCarta = carta;
+    }
+  }
+  return melhorCarta;
+}
+
 function adicionarLog(mensagem) {
   estado.log.push(mensagem);
   renderLog();
 }
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ==================== MONTAGEM DE DECK COM DIFICULDADE ====================
+function montarDeck(jogadorId, deckCompleto, nivel) {
+  let deck = [];
+  const monstrosFortes = deckCompleto.filter(c => c.tipo === 'monstro' && c.atk > 2000);
+  const monstrosFracos = deckCompleto.filter(c => c.tipo === 'monstro' && c.atk <= 2000);
+  const magias = deckCompleto.filter(c => c.tipo === 'magia');
+  const armadilhas = deckCompleto.filter(c => c.tipo === 'armadilha');
+
+  if (nivel === 'facil') {
+    if (jogadorId === 2) {
+      // IA sem monstros > 2000, no máx 1 magia e 1 armadilha
+      const monstrosPermitidos = embaralhar([...monstrosFracos]);
+      const magiaPermitida = embaralhar([...magias]).slice(0, 1);
+      const armadilhaPermitida = embaralhar([...armadilhas]).slice(0, 1);
+      deck = [...monstrosPermitidos.slice(0, 18), ...magiaPermitida, ...armadilhaPermitida];
+      // Completar com monstros fracos se necessário
+      while (deck.length < 20 && monstrosPermitidos.length > deck.length) {
+        deck.push(monstrosPermitidos[deck.length]);
+      }
+      deck = embaralhar(deck);
+    } else {
+      // Jogador 1: pelo menos 3 monstros fortes
+      const fortesEscolhidos = embaralhar([...monstrosFortes]).slice(0, 3);
+      const restante = embaralhar([...deckCompleto.filter(c => !fortesEscolhidos.includes(c))]);
+      deck = [...fortesEscolhidos, ...restante.slice(0, 17)];
+      deck = embaralhar(deck);
+    }
+  } else {
+    // Médio e Difícil: balanceado, pelo menos 5 magias/armadilhas
+    const numMagiasArmadilhas = 5 + Math.floor(Math.random() * 6); // 5 a 10
+    const magiasEscolhidas = embaralhar([...magias]).slice(0, Math.ceil(numMagiasArmadilhas / 2));
+    const armadilhasEscolhidas = embaralhar([...armadilhas]).slice(0, Math.floor(numMagiasArmadilhas / 2));
+    const magiaArmadilha = [...magiasEscolhidas, ...armadilhasEscolhidas];
+    const monstros = embaralhar([...monstrosFortes, ...monstrosFracos]);
+    deck = [...magiaArmadilha, ...monstros.slice(0, 20 - magiaArmadilha.length)];
+    deck = embaralhar(deck);
+  }
+  return deck.slice(0, 20);
+}
+
 // ==================== INICIALIZAÇÃO ====================
 function iniciarCampeonato() {
+  nivelDificuldade = document.getElementById('dificuldade').value;
   estado.campeonato.vitoriasJ1 = 0;
   estado.campeonato.vitoriasJ2 = 0;
   estado.campeonato.rodadaAtual = 1;
@@ -78,17 +163,16 @@ function iniciarNovoDuelo() {
   estado.jogadores[1] = criarJogadorInicial(1);
   estado.jogadores[2] = criarJogadorInicial(2);
 
-  const deckCompleto = [...ALL_CARDS];
-  embaralhar(deckCompleto);
-  estado.jogadores[1].deck = deckCompleto.slice(0, 20);
-  estado.jogadores[2].deck = deckCompleto.slice(20, 40);
+  // Montar decks conforme dificuldade
+  estado.jogadores[1].deck = montarDeck(1, [...ALL_CARDS], nivelDificuldade);
+  estado.jogadores[2].deck = montarDeck(2, [...ALL_CARDS], nivelDificuldade);
 
+  // Distribuir mãos iniciais
   for (let i = 0; i < 5; i++) {
     comprarCarta(1);
     comprarCarta(2);
   }
 
-  // Sorteio de quem começa
   estado.jogadorAtual = Math.random() < 0.5 ? 1 : 2;
   estado.turno = 1;
   estado.primeiroTurno = true;
@@ -112,11 +196,12 @@ function iniciarNovoDuelo() {
 function encerrarTurno() {
   if (estado.fase === 'fim') return;
 
-  // Resetar flags de ataque
-  estado.jogadores[1].zonaMonstros.forEach(m => { if (m) m.jaAtacou = false; });
-  estado.jogadores[2].zonaMonstros.forEach(m => { if (m) m.jaAtacou = false; });
+  estado.jogadores[1].zonaMonstros.forEach(m => { if (m) { m.jaAtacou = false; m.ataquesRestantes = m.efeito === 'pode_atacar_duas_vezes' ? 2 : 1; } });
+  estado.jogadores[2].zonaMonstros.forEach(m => { if (m) { m.jaAtacou = false; m.ataquesRestantes = m.efeito === 'pode_atacar_duas_vezes' ? 2 : 1; } });
 
-  // Passar para o outro jogador
+  retornarMonstrosTemporarios(1);
+  retornarMonstrosTemporarios(2);
+
   estado.jogadorAtual = estado.jogadorAtual === 1 ? 2 : 1;
   estado.turno++;
   estado.primeiroTurno = false;
@@ -138,6 +223,26 @@ function encerrarTurno() {
 
   if (estado.jogadorAtual === 2) {
     setTimeout(() => aiTurn(estado), 1200);
+  }
+}
+
+function retornarMonstrosTemporarios(jogadorId) {
+  const jogador = estado.jogadores[jogadorId];
+  const donoOriginal = jogadorId === 1 ? 2 : 1;
+  const dono = estado.jogadores[donoOriginal];
+  for (let i = 0; i < jogador.zonaMonstros.length; i++) {
+    const monstro = jogador.zonaMonstros[i];
+    if (monstro && monstro.temporario) {
+      jogador.zonaMonstros[i] = null;
+      const slotVazio = dono.zonaMonstros.findIndex(slot => slot === null);
+      if (slotVazio !== -1) {
+        dono.zonaMonstros[slotVazio] = monstro;
+        monstro.temporario = false;
+      } else {
+        dono.cemiterio.push(monstro);
+        adicionarLog(`${monstro.nome} retornou ao cemitério do dono original.`);
+      }
+    }
   }
 }
 
@@ -164,15 +269,32 @@ function selecionarCartaDaMao(index) {
     mostrarModalPosicao();
   } else if (carta.tipo === 'magia') {
     estado.cartaSelecionada = index;
-    if (carta.efeito === 'buff_500') {
-      estado.acaoPendente = { tipo: 'magia_buff' };
+    if (carta.efeito === 'buff_500' || carta.efeito === 'buff_1000') {
+      estado.acaoPendente = { tipo: 'magia_buff', valor: carta.efeito === 'buff_500' ? 500 : 1000 };
       destacarMonstrosProprios();
-      adicionarLog('Escolha um monstro seu para receber +500 de ATK.');
+      adicionarLog(`Escolha um monstro seu para receber +${estado.acaoPendente.valor} de ATK/DEF.`);
     } else if (carta.efeito === 'destruir_inimigo') {
       estado.acaoPendente = { tipo: 'magia_destruir' };
       destacarMonstrosInimigos();
       adicionarLog('Escolha um monstro inimigo para destruir.');
-    } else if (carta.efeito === 'comprar_2') {
+    } else if (carta.efeito === 'destruir_todos_inimigos') {
+      usarMagia(1, index, null);
+    } else if (carta.efeito === 'reviver_monstro') {
+      if (jogador.cemiterio.length === 0) {
+        adicionarLog('Seu cemitério está vazio.');
+        return;
+      }
+      estado.acaoPendente = { tipo: 'reviver' };
+      mostrarSelecaoCemiterio();
+    } else if (carta.efeito === 'roubar_monstro') {
+      estado.acaoPendente = { tipo: 'roubar' };
+      destacarMonstrosInimigos();
+      adicionarLog('Escolha um monstro inimigo para assumir o controle.');
+    } else if (carta.efeito === 'curar_2000') {
+      usarMagia(1, index, null);
+    } else if (carta.efeito === 'destruir_magias_armadilhas') {
+      usarMagia(1, index, null);
+    } else if (carta.efeito === 'comprar_2' || carta.efeito === 'comprar_3_dano_1000') {
       usarMagia(1, index, null);
     }
   } else if (carta.tipo === 'armadilha') {
@@ -185,7 +307,7 @@ function selecionarCartaDaMao(index) {
   }
 }
 
-// Modal de posição
+// ==================== MODAL DE POSIÇÃO ====================
 function mostrarModalPosicao() {
   document.getElementById('modal-position').classList.remove('hidden');
 }
@@ -210,6 +332,7 @@ document.getElementById('btn-defesa').addEventListener('click', () => {
   }
 });
 
+// ==================== INVOAR MONSTRO ====================
 function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
@@ -217,9 +340,23 @@ function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
   if (slotIndex < 0 || slotIndex > 2 || jogador.zonaMonstros[slotIndex] !== null) return false;
 
   jogador.mao.splice(maoIndex, 1);
-  jogador.zonaMonstros[slotIndex] = { ...carta, posicao, jaAtacou: false };
+  const monstro = {
+    ...carta,
+    posicao,
+    jaAtacou: false,
+    ataquesRestantes: carta.efeito === 'pode_atacar_duas_vezes' ? 2 : 1,
+    bonusAtk: 0,
+    bonusDef: 0,
+    temporario: false
+  };
+  jogador.zonaMonstros[slotIndex] = monstro;
   adicionarLog(`Jogador ${jogadorId} invocou ${carta.nome} na posição ${posicao}.`);
+
+  // Verificar armadilhas de invocação do oponente
   verificarArmadilhaInvocacao(jogadorId, slotIndex);
+
+  // Aplicar efeitos de invocação
+  aplicarEfeitoInvocacao(jogadorId, slotIndex);
 
   if (jogadorId === 1) {
     estado.cartaSelecionada = null;
@@ -232,6 +369,72 @@ function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
   return true;
 }
 
+// ==================== EFEITOS DE INVOCAÇÃO ====================
+function aplicarEfeitoInvocacao(jogadorId, slotIndex) {
+  const jogador = estado.jogadores[jogadorId];
+  const monstro = jogador.zonaMonstros[slotIndex];
+  if (!monstro) return;
+
+  const oponenteId = jogadorId === 1 ? 2 : 1;
+  const oponente = estado.jogadores[oponenteId];
+
+  switch (monstro.efeito) {
+    case 'ao_invocar_revive_monstro':
+      if (jogador.cemiterio.length > 0) {
+        const maisForte = jogador.cemiterio.reduce((a, b) => (b.atk > a.atk ? b : a));
+        const idxCem = jogador.cemiterio.indexOf(maisForte);
+        jogador.cemiterio.splice(idxCem, 1);
+        const slotVazio = jogador.zonaMonstros.findIndex(s => s === null);
+        if (slotVazio !== -1) {
+          jogador.zonaMonstros[slotVazio] = { ...maisForte, jaAtacou: false, ataquesRestantes: 1, bonusAtk: 0, bonusDef: 0, temporario: false };
+          adicionarLog(`${monstro.nome} reviveu ${maisForte.nome} do cemitério!`);
+          animarCarta(jogadorId, 'monstro', slotVazio);
+        }
+      }
+      break;
+
+    case 'ao_invocar_destroi_magia_armadilha':
+      for (let i = 0; i < oponente.zonaMagias.length; i++) {
+        if (oponente.zonaMagias[i]) {
+          adicionarLog(`${monstro.nome} destruiu ${oponente.zonaMagias[i].nome}.`);
+          oponente.zonaMagias[i] = null;
+        }
+      }
+      render();
+      break;
+
+    case 'ao_invocar_comprar_1_carta':
+      comprarCarta(jogadorId, 1);
+      break;
+
+    case 'ao_invocar_causa_500_dano_direto':
+      oponente.hp -= 500;
+      adicionarLog(`${monstro.nome} causou 500 de dano direto!`);
+      if (oponente.hp <= 0) finalizarDuelo(jogadorId, 'HP zerado');
+      render();
+      break;
+
+    case 'ao_invocar_devolve_monstro_pra_mao':
+      if (oponente.zonaMonstros.some(m => m !== null)) {
+        const idx = oponente.zonaMonstros.findIndex(m => m !== null);
+        const alvo = oponente.zonaMonstros[idx];
+        oponente.zonaMonstros[idx] = null;
+        if (oponente.mao.length < 5) {
+          oponente.mao.push(alvo);
+        } else {
+          oponente.cemiterio.push(alvo);
+        }
+        adicionarLog(`${monstro.nome} devolveu ${alvo.nome} para a mão.`);
+        render();
+      }
+      break;
+
+    default:
+      break;
+  }
+}
+
+// ==================== BAIXAR ARMADILHA ====================
 function baixarArmadilha(jogadorId, maoIndex, slotIndex) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
@@ -251,22 +454,37 @@ function baixarArmadilha(jogadorId, maoIndex, slotIndex) {
   return true;
 }
 
+// ==================== USAR MAGIA ====================
 function usarMagia(jogadorId, maoIndex, alvo) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
   if (!carta || carta.tipo !== 'magia') return false;
 
-  // Efeito de ativação da magia: animar a carta da mão se for humano
+  // Verificar armadilha que nega magia (Silêncio Arcano)
+  const oponenteId = jogadorId === 1 ? 2 : 1;
+  const oponente = estado.jogadores[oponenteId];
+  for (let i = 0; i < oponente.zonaMagias.length; i++) {
+    const arm = oponente.zonaMagias[i];
+    if (arm && arm.tipo === 'armadilha' && arm.viradaParaBaixo && arm.efeito === 'armadilha_negar_magia') {
+      arm.viradaParaBaixo = false;
+      render();
+      animarCarta(oponenteId, 'magia', i, 'trap');
+      adicionarLog(`Armadilha "Silêncio Arcano" ativada! Magia ${carta.nome} foi negada.`);
+      oponente.zonaMagias[i] = null;
+      jogador.mao.splice(maoIndex, 1);
+      render();
+      return true;
+    }
+  }
+
+  // Animar ativação da magia
   if (jogadorId === 1) {
     const handCard = document.querySelector(`.hand-card[data-index="${maoIndex}"]`);
     if (handCard) {
       handCard.classList.add('magic-activating');
-      setTimeout(() => {
-        handCard.remove();
-      }, 800);
+      setTimeout(() => handCard.remove(), 800);
     }
   } else {
-    // Para IA, apenas removemos e mostramos efeito no alvo/geral
     adicionarLog(`Jogador 2 ativou ${carta.nome}.`);
   }
 
@@ -277,32 +495,113 @@ function usarMagia(jogadorId, maoIndex, alvo) {
       if (alvo && alvo.tipo === 'proprio') {
         const monstro = jogador.zonaMonstros[alvo.slot];
         if (monstro) {
-          monstro.atk += 500;
+          monstro.bonusAtk = (monstro.bonusAtk || 0) + 500;
           adicionarLog(`${monstro.nome} ganhou +500 de ATK.`);
           animarCarta(jogadorId, 'monstro', alvo.slot);
         }
       }
       break;
-    case 'destruir_inimigo':
-      if (alvo && alvo.tipo === 'inimigo') {
-        const inimigoId = jogadorId === 1 ? 2 : 1;
-        const inimigo = estado.jogadores[inimigoId];
-        const monstro = inimigo.zonaMonstros[alvo.slot];
+
+    case 'buff_1000':
+      if (alvo && alvo.tipo === 'proprio') {
+        const monstro = jogador.zonaMonstros[alvo.slot];
         if (monstro) {
-          // Animação de destruição: brilho no alvo
-          animarCarta(inimigoId, 'monstro', alvo.slot, 'destroy');
-          setTimeout(() => {
-            inimigo.zonaMonstros[alvo.slot] = null;
-            adicionarLog(`${monstro.nome} foi destruído por Raios de Zeus.`);
-            aplicarEfeitoMorte(monstro, inimigoId);
-            render();
-          }, 600);
+          monstro.bonusAtk = (monstro.bonusAtk || 0) + 1000;
+          monstro.bonusDef = (monstro.bonusDef || 0) + 1000;
+          adicionarLog(`${monstro.nome} ganhou +1000 de ATK e DEF.`);
+          animarCarta(jogadorId, 'monstro', alvo.slot);
         }
       }
       break;
+
+    case 'destruir_inimigo':
+      if (alvo && alvo.tipo === 'inimigo') {
+        const inimigo = oponente;
+        const monstro = inimigo.zonaMonstros[alvo.slot];
+        if (monstro) {
+          if (monstro.efeito === 'imune_a_magias' || monstro.efeito === 'nao_pode_ser_destruido_por_efeito') {
+            adicionarLog(`${monstro.nome} é imune a magias e não foi destruído.`);
+          } else {
+            destruirMonstro(oponenteId, alvo.slot, 'efeito de magia');
+          }
+        }
+      }
+      break;
+
+    case 'destruir_todos_inimigos':
+      for (let i = 0; i < oponente.zonaMonstros.length; i++) {
+        const monstro = oponente.zonaMonstros[i];
+        if (monstro && monstro.efeito !== 'imune_a_magias' && monstro.efeito !== 'nao_pode_ser_destruido_por_efeito') {
+          destruirMonstro(oponenteId, i, 'efeito de magia');
+        }
+      }
+      render();
+      break;
+
+    case 'reviver_monstro':
+      if (alvo && alvo.tipo === 'cemiterio') {
+        const cemiterio = jogador.cemiterio;
+        const monstro = cemiterio[alvo.index];
+        if (monstro) {
+          cemiterio.splice(alvo.index, 1);
+          const slotVazio = jogador.zonaMonstros.findIndex(s => s === null);
+          if (slotVazio !== -1) {
+            jogador.zonaMonstros[slotVazio] = { ...monstro, jaAtacou: false, ataquesRestantes: 1, bonusAtk: 0, bonusDef: 0, temporario: false };
+            adicionarLog(`${monstro.nome} foi revivido!`);
+            animarCarta(jogadorId, 'monstro', slotVazio);
+          } else {
+            adicionarLog('Zona de monstros cheia.');
+          }
+        }
+      }
+      break;
+
+    case 'roubar_monstro':
+      if (alvo && alvo.tipo === 'inimigo') {
+        const inimigo = oponente;
+        const monstro = inimigo.zonaMonstros[alvo.slot];
+        if (monstro) {
+          inimigo.zonaMonstros[alvo.slot] = null;
+          const slotVazio = jogador.zonaMonstros.findIndex(s => s === null);
+          if (slotVazio !== -1) {
+            jogador.zonaMonstros[slotVazio] = { ...monstro, temporario: true, jaAtacou: false, ataquesRestantes: 1 };
+            adicionarLog(`${monstro.nome} foi controlado por você até o fim do turno.`);
+            animarCarta(jogadorId, 'monstro', slotVazio);
+          } else {
+            inimigo.cemiterio.push(monstro);
+          }
+          render();
+        }
+      }
+      break;
+
+    case 'curar_2000':
+      jogador.hp += 2000;
+      adicionarLog(`${jogadorId === 1 ? 'Jogador 1' : 'Jogador 2'} curou 2000 de vida.`);
+      break;
+
+    case 'destruir_magias_armadilhas':
+      for (let i = 0; i < oponente.zonaMagias.length; i++) {
+        if (oponente.zonaMagias[i]) {
+          oponente.zonaMagias[i] = null;
+        }
+      }
+      adicionarLog('Todas as magias/armadilhas do oponente foram destruídas.');
+      render();
+      break;
+
     case 'comprar_2':
       comprarCarta(jogadorId, 2);
-      adicionarLog(`Jogador ${jogadorId} comprou 2 cartas.`);
+      break;
+
+    case 'comprar_3_dano_1000':
+      comprarCarta(jogadorId, 3);
+      jogador.hp -= 1000;
+      adicionarLog(`${jogadorId === 1 ? 'Jogador 1' : 'Jogador 2'} perdeu 1000 de vida.`);
+      if (jogador.hp <= 0) finalizarDuelo(oponenteId, 'HP zerado');
+      break;
+
+    default:
       break;
   }
 
@@ -315,6 +614,19 @@ function usarMagia(jogadorId, maoIndex, alvo) {
   return true;
 }
 
+// ==================== DESTRUIR MONSTRO ====================
+function destruirMonstro(jogadorId, slotIndex, motivo) {
+  const jogador = estado.jogadores[jogadorId];
+  const monstro = jogador.zonaMonstros[slotIndex];
+  if (!monstro) return;
+
+  aplicarEfeitoMorte(monstro, jogadorId);
+  jogador.cemiterio.push(monstro);
+  jogador.zonaMonstros[slotIndex] = null;
+  adicionarLog(`${monstro.nome} foi destruído (${motivo}).`);
+  render();
+}
+
 // ==================== ARMADILHAS ====================
 function verificarArmadilhaInvocacao(jogadorInvoker, slotIndex) {
   const invocador = estado.jogadores[jogadorInvoker];
@@ -325,21 +637,32 @@ function verificarArmadilhaInvocacao(jogadorInvoker, slotIndex) {
 
   for (let i = 0; i < oponente.zonaMagias.length; i++) {
     const armadilha = oponente.zonaMagias[i];
-    if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo && armadilha.efeito === 'armadilha_ira') {
-      if (monstro.atk > 2000) {
-        // Ativar armadilha: virar para cima e animar
-        oponente.zonaMagias[i].viradaParaBaixo = false;
+    if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo) {
+      if (armadilha.efeito === 'armadilha_ira' && monstro.atk > 2000) {
+        armadilha.viradaParaBaixo = false;
         render();
         animarCarta(oponenteId, 'magia', i, 'trap');
         adicionarLog(`Armadilha "Ira do Submundo" ativada!`);
         setTimeout(() => {
-          invocador.zonaMonstros[slotIndex] = null;
+          destruirMonstro(jogadorInvoker, slotIndex, 'armadilha Ira do Submundo');
           oponente.zonaMagias[i] = null;
-          adicionarLog(`${monstro.nome} foi destruído.`);
-          aplicarEfeitoMorte(monstro, jogadorInvoker);
-          render();
         }, 800);
         break;
+      } else if (armadilha.efeito === 'armadilha_negar_invocacao') {
+        if (monstro.efeito !== 'imune_a_armadilhas' && monstro.efeito !== 'nao_pode_ser_destruido_por_efeito') {
+          armadilha.viradaParaBaixo = false;
+          render();
+          animarCarta(oponenteId, 'magia', i, 'trap');
+          adicionarLog(`Armadilha "Julgamento Divino" ativada! Invocação negada.`);
+          setTimeout(() => {
+            invocador.zonaMonstros[slotIndex] = null;
+            invocador.cemiterio.push(monstro);
+            oponente.zonaMagias[i] = null;
+            adicionarLog(`${monstro.nome} foi destruído.`);
+            render();
+          }, 800);
+          break;
+        }
       }
     }
   }
@@ -361,7 +684,7 @@ function iniciarBatalha() {
     return;
   }
 
-  const temAtacantes = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && !m.jaAtacou);
+  const temAtacantes = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && m.ataquesRestantes > 0 && m.efeito !== 'nao_pode_atacar');
   if (!temAtacantes) {
     adicionarLog('Nenhum monstro em posição de ataque disponível para atacar.');
     return;
@@ -381,7 +704,7 @@ function destacarAtacantesDisponiveis(jogadorId) {
   slots.forEach(slot => {
     const index = parseInt(slot.dataset.slot);
     const monstro = estado.jogadores[jogadorId].zonaMonstros[index];
-    if (monstro && monstro.posicao === 'ataque' && !monstro.jaAtacou) {
+    if (monstro && monstro.posicao === 'ataque' && monstro.ataquesRestantes > 0 && monstro.efeito !== 'nao_pode_atacar') {
       slot.classList.add('highlight');
     }
   });
@@ -390,7 +713,7 @@ function destacarAtacantesDisponiveis(jogadorId) {
 function selecionarAtacante(slotIndex) {
   if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return;
   const monstro = estado.jogadores[1].zonaMonstros[slotIndex];
-  if (!monstro || monstro.posicao !== 'ataque' || monstro.jaAtacou) return;
+  if (!monstro || monstro.posicao !== 'ataque' || monstro.ataquesRestantes === 0 || monstro.efeito === 'nao_pode_atacar') return;
 
   estado.atacanteSelecionado = slotIndex;
   limparDestaques();
@@ -409,70 +732,84 @@ function destacarAlvosInimigos() {
   });
 }
 
-// Função para animar ataque: adiciona classes e depois resolve
-function animarAtaque(atacanteSlot, defensorSlot, jogadorAtacanteId, jogadorDefensorId) {
-  return new Promise(resolve => {
-    const atacanteElement = document.querySelector(`#monstro-slots-p${jogadorAtacanteId} .slot[data-slot="${atacanteSlot}"] .card`);
-    const defensorElement = defensorSlot !== null ? document.querySelector(`#monstro-slots-p${jogadorDefensorId} .slot[data-slot="${defensorSlot}"] .card`) : null;
-    if (atacanteElement) atacanteElement.classList.add('attacking');
-    if (defensorElement) defensorElement.classList.add('defending');
-    setTimeout(() => {
-      if (atacanteElement) atacanteElement.classList.remove('attacking');
-      if (defensorElement) defensorElement.classList.remove('defending');
-      resolve();
-    }, 600);
-  });
-}
-
-// Função para executar ataque do jogador humano (async)
 async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
   if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return;
   const atacante = estado.jogadores[1].zonaMonstros[atacanteSlot];
-  if (!atacante || atacante.jaAtacou) return;
+  if (!atacante || atacante.ataquesRestantes === 0) return;
 
   const defensorId = 2;
   const defensor = estado.jogadores[defensorId];
 
-  // Verificar armadilha escudo
-  for (let j = 0; j < defensor.zonaMagias.length; j++) {
-    const armadilha = defensor.zonaMagias[j];
-    if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo && armadilha.efeito === 'armadilha_escudo') {
-      // Ativar escudo
-      defensor.zonaMagias[j].viradaParaBaixo = false;
-      render();
-      animarCarta(defensorId, 'magia', j, 'trap');
-      adicionarLog(`Armadilha "Escudo de Atenas" ativada!`);
-      await delay(800);
-      atacante.posicao = 'defesa';
-      defensor.zonaMagias[j] = null;
-      atacante.jaAtacou = true;
-      estado.atacanteSelecionado = null;
-      limparDestaques();
-      render();
-      verificarFimBatalha();
-      return;
+  // Verificar armadilhas que respondem ao ataque
+  for (let i = 0; i < defensor.zonaMagias.length; i++) {
+    const armadilha = defensor.zonaMagias[i];
+    if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo) {
+      if (armadilha.efeito === 'armadilha_escudo' && atacante.efeito !== 'imune_a_armadilhas') {
+        armadilha.viradaParaBaixo = false;
+        render();
+        animarCarta(defensorId, 'magia', i, 'trap');
+        adicionarLog(`Armadilha "Escudo de Atenas" ativada!`);
+        await delay(800);
+        atacante.posicao = 'defesa';
+        atacante.ataquesRestantes--;
+        defensor.zonaMagias[i] = null;
+        estado.atacanteSelecionado = null;
+        limparDestaques();
+        render();
+        verificarFimBatalha();
+        return;
+      } else if (armadilha.efeito === 'armadilha_destruir_atacantes' && atacante.efeito !== 'imune_a_armadilhas') {
+        armadilha.viradaParaBaixo = false;
+        render();
+        animarCarta(defensorId, 'magia', i, 'trap');
+        adicionarLog(`Armadilha "Força Espelhada" ativada!`);
+        await delay(800);
+        for (let j = 0; j < estado.jogadores[1].zonaMonstros.length; j++) {
+          const m = estado.jogadores[1].zonaMonstros[j];
+          if (m && m.posicao === 'ataque' && m.efeito !== 'imune_a_armadilhas' && m.efeito !== 'nao_pode_ser_destruido_por_efeito') {
+            destruirMonstro(1, j, 'Força Espelhada');
+          }
+        }
+        defensor.zonaMagias[i] = null;
+        estado.atacanteSelecionado = null;
+        limparDestaques();
+        render();
+        verificarFimBatalha();
+        return;
+      } else if (armadilha.efeito === 'armadilha_refletir_dano' && atacante.efeito !== 'imune_a_armadilhas') {
+        armadilha.viradaParaBaixo = false;
+        render();
+        animarCarta(defensorId, 'magia', i, 'trap');
+        adicionarLog(`Armadilha "Cilindro Mágico" ativada!`);
+        await delay(800);
+        estado.jogadores[1].hp -= atacante.atk;
+        adicionarLog(`${atacante.nome} teve seu ataque refletido! Jogador 1 perdeu ${atacante.atk} HP.`);
+        atacante.ataquesRestantes--;
+        defensor.zonaMagias[i] = null;
+        if (estado.jogadores[1].hp <= 0) finalizarDuelo(2, 'HP zerado');
+        estado.atacanteSelecionado = null;
+        limparDestaques();
+        render();
+        verificarFimBatalha();
+        return;
+      }
     }
   }
 
-  // Animar ataque
+  // Animação de ataque
   estado.processandoAnimacao = true;
-  let alvoSlotDefensor = alvoTipo === 'monstro' ? alvoSlot : null;
-  await animarAtaque(atacanteSlot, alvoSlotDefensor, 1, 2);
+  const monstroDefensor = alvoTipo === 'monstro' ? defensor.zonaMonstros[alvoSlot] : null;
+  await animarAtaque(atacanteSlot, alvoTipo === 'monstro' ? alvoSlot : null, 1, 2);
 
-  // Aplicar dano
   if (alvoTipo === 'jogador') {
     defensor.hp -= atacante.atk;
     adicionarLog(`${atacante.nome} atacou diretamente! Jogador 2 perdeu ${atacante.atk} HP.`);
-    atacante.jaAtacou = true;
-    if (defensor.hp <= 0) {
-      finalizarDuelo(1, 'HP zerado');
-      return;
-    }
-  } else if (alvoTipo === 'monstro') {
-    const monstroDefensor = defensor.zonaMonstros[alvoSlot];
+    atacante.ataquesRestantes--;
+    if (defensor.hp <= 0) finalizarDuelo(1, 'HP zerado');
+  } else {
     if (monstroDefensor) {
       resolverBatalha(1, 2, atacanteSlot, alvoSlot);
-      atacante.jaAtacou = true;
+      atacante.ataquesRestantes--;
     }
   }
 
@@ -483,12 +820,8 @@ async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
   verificarFimBatalha();
 }
 
-function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 function verificarFimBatalha() {
-  const aindaPodeAtacar = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && !m.jaAtacou);
+  const aindaPodeAtacar = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && m.ataquesRestantes > 0 && m.efeito !== 'nao_pode_atacar');
   if (aindaPodeAtacar) {
     destacarAtacantesDisponiveis(1);
     adicionarLog('Selecione outro monstro atacante ou encerre a batalha.');
@@ -503,31 +836,41 @@ function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slo
   const defensor = estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor];
   if (!atacante || !defensor) return;
 
+  const atkTotal = atacante.atk + (atacante.bonusAtk || 0);
+  const defTotal = defensor.posicao === 'ataque' ? defensor.atk + (defensor.bonusAtk || 0) : defensor.def + (defensor.bonusDef || 0);
+
   if (defensor.posicao === 'ataque') {
-    const dif = atacante.atk - defensor.atk;
+    const dif = atkTotal - defTotal;
     if (dif > 0) {
-      estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor] = null;
+      destruirMonstro(jogadorDefensorId, slotDefensor, 'batalha');
       estado.jogadores[jogadorDefensorId].hp -= dif;
       adicionarLog(`${defensor.nome} destruído! Jogador ${jogadorDefensorId} perdeu ${dif} HP.`);
-      aplicarEfeitoMorte(defensor, jogadorDefensorId);
+      if (atacante.efeito === 'ganha_500_atk_ao_destruir_inimigo') {
+        atacante.bonusAtk = (atacante.bonusAtk || 0) + 500;
+        adicionarLog(`${atacante.nome} ganhou +500 de ATK.`);
+      }
+      if (atacante.efeito === 'cura_vida_igual_dano_causado') {
+        estado.jogadores[jogadorAtacanteId].hp += dif;
+        adicionarLog(`${atacante.nome} curou ${dif} de vida.`);
+      }
     } else if (dif === 0) {
-      estado.jogadores[jogadorAtacanteId].zonaMonstros[slotAtacante] = null;
-      estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor] = null;
+      destruirMonstro(jogadorAtacanteId, slotAtacante, 'batalha');
+      destruirMonstro(jogadorDefensorId, slotDefensor, 'batalha');
       adicionarLog(`Empate! ${atacante.nome} e ${defensor.nome} destruídos.`);
-      aplicarEfeitoMorte(atacante, jogadorAtacanteId);
-      aplicarEfeitoMorte(defensor, jogadorDefensorId);
     } else {
-      estado.jogadores[jogadorAtacanteId].zonaMonstros[slotAtacante] = null;
+      destruirMonstro(jogadorAtacanteId, slotAtacante, 'batalha');
       estado.jogadores[jogadorAtacanteId].hp -= (-dif);
       adicionarLog(`${atacante.nome} destruído! Jogador ${jogadorAtacanteId} perdeu ${-dif} HP.`);
-      aplicarEfeitoMorte(atacante, jogadorAtacanteId);
     }
-  } else { // Defesa
-    const dif = atacante.atk - defensor.def;
+  } else {
+    const dif = atkTotal - defTotal;
     if (dif > 0) {
-      estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor] = null;
+      destruirMonstro(jogadorDefensorId, slotDefensor, 'batalha');
       adicionarLog(`${defensor.nome} destruído em defesa.`);
-      aplicarEfeitoMorte(defensor, jogadorDefensorId);
+      if (atacante.efeito === 'dano_perfurante' || atacante.efeito === 'ignora_defesa_ataque_direto') {
+        estado.jogadores[jogadorDefensorId].hp -= dif;
+        adicionarLog(`Dano perfurante! Jogador ${jogadorDefensorId} perdeu ${dif} HP.`);
+      }
     } else if (dif < 0) {
       estado.jogadores[jogadorAtacanteId].hp -= (-dif);
       adicionarLog(`${atacante.nome} não destruiu ${defensor.nome}. Jogador ${jogadorAtacanteId} perdeu ${-dif} HP.`);
@@ -535,7 +878,6 @@ function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slo
   }
 }
 
-// Função para ataques automáticos da IA (async)
 async function executarAtaquesAutomaticos(jogadorId) {
   const jogador = estado.jogadores[jogadorId];
   const inimigoId = jogadorId === 1 ? 2 : 1;
@@ -543,42 +885,66 @@ async function executarAtaquesAutomaticos(jogadorId) {
 
   for (let i = 0; i < jogador.zonaMonstros.length; i++) {
     const monstro = jogador.zonaMonstros[i];
-    if (!monstro || monstro.posicao !== 'ataque' || monstro.jaAtacou) continue;
+    if (!monstro || monstro.posicao !== 'ataque' || monstro.ataquesRestantes === 0 || monstro.efeito === 'nao_pode_atacar') continue;
 
-    // Verificar armadilha escudo
     for (let j = 0; j < inimigo.zonaMagias.length; j++) {
       const armadilha = inimigo.zonaMagias[j];
-      if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo && armadilha.efeito === 'armadilha_escudo') {
-        inimigo.zonaMagias[j].viradaParaBaixo = false;
-        render();
-        animarCarta(inimigoId, 'magia', j, 'trap');
-        adicionarLog(`Armadilha "Escudo de Atenas" ativada!`);
-        await delay(800);
-        monstro.posicao = 'defesa';
-        inimigo.zonaMagias[j] = null;
-        monstro.jaAtacou = true;
-        render();
-        break;
+      if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo) {
+        if (armadilha.efeito === 'armadilha_escudo' && monstro.efeito !== 'imune_a_armadilhas') {
+          armadilha.viradaParaBaixo = false;
+          render();
+          animarCarta(inimigoId, 'magia', j, 'trap');
+          adicionarLog(`Armadilha "Escudo de Atenas" ativada!`);
+          await delay(800);
+          monstro.posicao = 'defesa';
+          monstro.ataquesRestantes--;
+          inimigo.zonaMagias[j] = null;
+          render();
+          continue;
+        } else if (armadilha.efeito === 'armadilha_destruir_atacantes' && monstro.efeito !== 'imune_a_armadilhas') {
+          armadilha.viradaParaBaixo = false;
+          render();
+          animarCarta(inimigoId, 'magia', j, 'trap');
+          adicionarLog(`Armadilha "Força Espelhada" ativada!`);
+          await delay(800);
+          for (let k = 0; k < jogador.zonaMonstros.length; k++) {
+            const m = jogador.zonaMonstros[k];
+            if (m && m.posicao === 'ataque' && m.efeito !== 'imune_a_armadilhas' && m.efeito !== 'nao_pode_ser_destruido_por_efeito') {
+              destruirMonstro(jogadorId, k, 'Força Espelhada');
+            }
+          }
+          inimigo.zonaMagias[j] = null;
+          render();
+          continue;
+        } else if (armadilha.efeito === 'armadilha_refletir_dano' && monstro.efeito !== 'imune_a_armadilhas') {
+          armadilha.viradaParaBaixo = false;
+          render();
+          animarCarta(inimigoId, 'magia', j, 'trap');
+          adicionarLog(`Armadilha "Cilindro Mágico" ativada!`);
+          await delay(800);
+          jogador.hp -= monstro.atk;
+          adicionarLog(`${monstro.nome} teve seu ataque refletido! Jogador ${jogadorId} perdeu ${monstro.atk} HP.`);
+          monstro.ataquesRestantes--;
+          inimigo.zonaMagias[j] = null;
+          if (jogador.hp <= 0) finalizarDuelo(inimigoId, 'HP zerado');
+          render();
+          continue;
+        }
       }
     }
-    if (monstro.jaAtacou) continue;
 
-    // Animar ataque
     const monstroDefensor = inimigo.zonaMonstros[i];
     await animarAtaque(i, monstroDefensor ? i : null, jogadorId, inimigoId);
 
-    // Aplicar dano
     if (monstroDefensor) {
       resolverBatalha(jogadorId, inimigoId, i, i);
+      monstro.ataquesRestantes--;
     } else {
       inimigo.hp -= monstro.atk;
       adicionarLog(`${monstro.nome} atacou diretamente! Jogador ${inimigoId} perdeu ${monstro.atk} HP.`);
-      if (inimigo.hp <= 0) {
-        finalizarDuelo(jogadorId, 'HP zerado');
-        return;
-      }
+      monstro.ataquesRestantes--;
+      if (inimigo.hp <= 0) finalizarDuelo(jogadorId, 'HP zerado');
     }
-    monstro.jaAtacou = true;
     render();
     await delay(800);
   }
@@ -592,6 +958,21 @@ function encerrarBatalha() {
   limparDestaques();
   renderBotoes();
   adicionarLog('Fase de batalha encerrada.');
+}
+
+// ==================== ANIMAÇÃO DE ATAQUE ====================
+function animarAtaque(atacanteSlot, defensorSlot, jogadorAtacanteId, jogadorDefensorId) {
+  return new Promise(resolve => {
+    const atacanteElement = document.querySelector(`#monstro-slots-p${jogadorAtacanteId} .slot[data-slot="${atacanteSlot}"] .card`);
+    const defensorElement = defensorSlot !== null ? document.querySelector(`#monstro-slots-p${jogadorDefensorId} .slot[data-slot="${defensorSlot}"] .card`) : null;
+    if (atacanteElement) atacanteElement.classList.add('attacking');
+    if (defensorElement) defensorElement.classList.add('defending');
+    setTimeout(() => {
+      if (atacanteElement) atacanteElement.classList.remove('attacking');
+      if (defensorElement) defensorElement.classList.remove('defending');
+      resolve();
+    }, 600);
+  });
 }
 
 // ==================== FINALIZAÇÃO ====================
@@ -651,7 +1032,6 @@ function renderZonas() {
     zonaMonstros.innerHTML = '';
     zonaMagias.innerHTML = '';
 
-    // Monstros
     for (let j = 0; j < 3; j++) {
       const slot = document.createElement('div');
       slot.className = 'slot';
@@ -663,11 +1043,13 @@ function renderZonas() {
         const cardDiv = document.createElement('div');
         cardDiv.className = 'card';
         if (monstro.posicao === 'defesa') cardDiv.classList.add('defense');
+        const atkTotal = monstro.atk + (monstro.bonusAtk || 0);
+        const defTotal = monstro.def + (monstro.bonusDef || 0);
         cardDiv.innerHTML = `
           <div class="card-name">${monstro.nome}</div>
           <div class="card-stats">
-            <span>ATK ${monstro.atk}</span>
-            <span>DEF ${monstro.def}</span>
+            <span>ATK ${atkTotal}</span>
+            <span>DEF ${defTotal}</span>
           </div>
           <div class="card-position">${monstro.posicao === 'ataque' ? 'ATQ' : 'DEF'}</div>
         `;
@@ -679,7 +1061,6 @@ function renderZonas() {
       zonaMonstros.appendChild(slot);
     }
 
-    // Magias/Armadilhas
     for (let j = 0; j < 3; j++) {
       const slot = document.createElement('div');
       slot.className = 'slot';
@@ -770,10 +1151,18 @@ function renderLog() {
   logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// ==================== PREVIEW ====================
+// ==================== PREVIEW CORRIGIDO ====================
 function showPreview(carta) {
   const preview = document.getElementById('card-preview');
   preview.innerHTML = '';
+  if (carta.viradaParaBaixo) {
+    const nome = document.createElement('div');
+    nome.className = 'card-name';
+    nome.textContent = 'Carta virada';
+    preview.appendChild(nome);
+    preview.classList.remove('hidden');
+    return;
+  }
   const nome = document.createElement('div');
   nome.className = 'card-name';
   nome.textContent = carta.nome;
@@ -787,7 +1176,7 @@ function showPreview(carta) {
   if (carta.tipo === 'monstro') {
     const stats = document.createElement('div');
     stats.className = 'card-stats';
-    stats.innerHTML = `<span>ATK ${carta.atk}</span><span>DEF ${carta.def}</span>`;
+    stats.innerHTML = `<span>ATK ${carta.atk + (carta.bonusAtk || 0)}</span><span>DEF ${carta.def + (carta.bonusDef || 0)}</span>`;
     preview.appendChild(stats);
   }
 
@@ -858,15 +1247,12 @@ function animarCarta(jogadorId, zona, slotIndex, tipo = 'bright') {
       default: classe = 'bright';
     }
     cardElement.classList.add(classe);
-    setTimeout(() => {
-      cardElement.classList.remove(classe);
-    }, 800);
+    setTimeout(() => cardElement.classList.remove(classe), 800);
   }
 }
 
 // ==================== TRATAMENTO DE CLICKS ====================
 function handleSlotClick(jogadorId, zona, slotIndex) {
-  // Fase de batalha
   if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
     if (jogadorId === 1 && zona === 'monstro') {
       if (estado.atacanteSelecionado === null) {
@@ -887,7 +1273,6 @@ function handleSlotClick(jogadorId, zona, slotIndex) {
     return;
   }
 
-  // Fase principal
   if (estado.jogadorAtual !== 1 || estado.fase !== 'main' || estado.processandoAnimacao) return;
   const jogador = estado.jogadores[1];
   const acao = estado.acaoPendente;
@@ -905,6 +1290,12 @@ function handleSlotClick(jogadorId, zona, slotIndex) {
     if (jogadorId === 2 && zona === 'monstro' && estado.jogadores[2].zonaMonstros[slotIndex] !== null) {
       usarMagia(1, estado.cartaSelecionada, { tipo: 'inimigo', slot: slotIndex });
     }
+  } else if (acao.tipo === 'roubar') {
+    if (jogadorId === 2 && zona === 'monstro' && estado.jogadores[2].zonaMonstros[slotIndex] !== null) {
+      usarMagia(1, estado.cartaSelecionada, { tipo: 'inimigo', slot: slotIndex });
+    }
+  } else if (acao.tipo === 'reviver') {
+    // Implementado via modal separado
   }
 }
 
@@ -924,5 +1315,8 @@ document.getElementById('btn-encerrar').addEventListener('click', () => {
   }
 });
 
+document.getElementById('btn-iniciar').addEventListener('click', iniciarCampeonato);
+
 // ==================== INICIAR ====================
-iniciarCampeonato();
+// Não iniciar automaticamente; aguardar clique no botão
+// iniciarCampeonato();

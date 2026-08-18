@@ -1,7 +1,6 @@
 // cards.js
 const ALL_CARDS = [
-  // ========== MONSTROS (26) ==========
-  // Normais
+  // ========== MONSTROS NORMAIS (29) ==========
   { id: 'm01', tipo: 'monstro', nome: 'Guerreiro de Pedra', atk: 1200, def: 1500, custo: 0, efeito: null },
   { id: 'm02', tipo: 'monstro', nome: 'Dragão Jovem', atk: 1800, def: 1000, custo: 0, efeito: null },
   { id: 'm03', tipo: 'monstro', nome: 'Cavaleiro Andante', atk: 1600, def: 1200, custo: 0, efeito: null },
@@ -26,11 +25,32 @@ const ALL_CARDS = [
   { id: 'm22', tipo: 'monstro', nome: 'Múmia', atk: 1000, def: 1800, custo: 0, efeito: null },
   { id: 'm23', tipo: 'monstro', nome: 'Esfinge', atk: 2300, def: 2000, custo: 0, efeito: null },
   { id: 'm24', tipo: 'monstro', nome: 'Quimera', atk: 2400, def: 1800, custo: 0, efeito: null },
-  // Com efeito
+  // Novos Monstros Normais (Poderosos)
+  { id: 'm27', tipo: 'monstro', nome: 'Dragão Imperador', atk: 3000, def: 2500, custo: 0, efeito: null },
+  { id: 'm28', tipo: 'monstro', nome: 'Colosso de Obsidiana', atk: 2800, def: 3000, custo: 0, efeito: null },
+  { id: 'm29', tipo: 'monstro', nome: 'Deus da Guerra', atk: 3200, def: 2800, custo: 0, efeito: null },
+  { id: 'm30', tipo: 'monstro', nome: 'Besta do Apocalipse', atk: 3500, def: 2000, custo: 0, efeito: null },
+
+  // ========== MONSTROS COM EFEITO (16) ==========
   { id: 'm25', tipo: 'monstro', nome: 'Fada Curandeira', atk: 800, def: 800, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
   { id: 'm26', tipo: 'monstro', nome: 'Fênix Renascida', atk: 2000, def: 1500, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
+  // Novos Monstros com Efeito
+  { id: 'm31', tipo: 'monstro', nome: 'Necromante Sombrio', atk: 1900, def: 1500, custo: 0, efeito: 'ao_invocar_revive_monstro' },
+  { id: 'm32', tipo: 'monstro', nome: 'Ladino das Sombras', atk: 1200, def: 800, custo: 0, efeito: 'ignora_defesa_ataque_direto' },
+  { id: 'm33', tipo: 'monstro', nome: 'Paladino da Luz', atk: 2500, def: 2000, custo: 0, efeito: 'ao_invocar_destroi_magia_armadilha' },
+  { id: 'm34', tipo: 'monstro', nome: 'Dragão Devorador', atk: 2400, def: 1200, custo: 0, efeito: 'ganha_500_atk_ao_destruir_inimigo' },
+  { id: 'm35', tipo: 'monstro', nome: 'Sábio da Floresta', atk: 500, def: 500, custo: 0, efeito: 'ao_invocar_comprar_1_carta' },
+  { id: 'm36', tipo: 'monstro', nome: 'Besta de Fogo', atk: 1800, def: 1000, custo: 0, efeito: 'ao_invocar_causa_500_dano_direto' },
+  { id: 'm37', tipo: 'monstro', nome: 'Rei Demônio', atk: 2800, def: 2400, custo: 0, efeito: 'dano_perfurante' },
+  { id: 'm38', tipo: 'monstro', nome: 'Anjo da Guarda', atk: 1000, def: 2000, custo: 0, efeito: 'imune_a_magias' },
+  { id: 'm39', tipo: 'monstro', nome: 'Leviatã', atk: 2900, def: 2500, custo: 0, efeito: 'nao_pode_ser_destruido_por_efeito' },
+  { id: 'm40', tipo: 'monstro', nome: 'Mago Temporal', atk: 1500, def: 1500, custo: 0, efeito: 'ao_invocar_devolve_monstro_pra_mao' },
+  { id: 'm41', tipo: 'monstro', nome: 'Guerreiro Berserker', atk: 2300, def: 0, custo: 0, efeito: 'pode_atacar_duas_vezes' },
+  { id: 'm42', tipo: 'monstro', nome: 'Vampiro Nobre', atk: 2100, def: 1500, custo: 0, efeito: 'cura_vida_igual_dano_causado' },
+  { id: 'm43', tipo: 'monstro', nome: 'Valquíria', atk: 2100, def: 1600, custo: 0, efeito: 'imune_a_armadilhas' },
+  { id: 'm44', tipo: 'monstro', nome: 'Guardião do Portão', atk: 0, def: 3500, custo: 0, efeito: 'nao_pode_atacar' },
 
-  // ========== MAGIAS (7) ==========
+  // ========== MAGIAS (18) ==========
   { id: 's01', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },
   { id: 's02', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },
   { id: 's03', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },
@@ -38,8 +58,20 @@ const ALL_CARDS = [
   { id: 's05', tipo: 'magia', nome: 'Raios de Zeus', efeito: 'destruir_inimigo', descricao: 'Destrói 1 monstro inimigo na Zona de Monstros.' },
   { id: 's06', tipo: 'magia', nome: 'Barganha Divina', efeito: 'comprar_2', descricao: 'Compre 2 cartas do seu deck imediatamente.' },
   { id: 's07', tipo: 'magia', nome: 'Barganha Divina', efeito: 'comprar_2', descricao: 'Compre 2 cartas do seu deck imediatamente.' },
+  // Novas Magias
+  { id: 's08', tipo: 'magia', nome: 'Chuva de Meteoros', efeito: 'destruir_todos_inimigos', descricao: 'Destrói todos os monstros na Zona de Monstros do oponente.' },
+  { id: 's09', tipo: 'magia', nome: 'Chuva de Meteoros', efeito: 'destruir_todos_inimigos', descricao: 'Destrói todos os monstros na Zona de Monstros do oponente.' },
+  { id: 's10', tipo: 'magia', nome: 'Ressurreição Sagrada', efeito: 'reviver_monstro', descricao: 'Invoque 1 monstro do seu cemitério diretamente para o campo.' },
+  { id: 's11', tipo: 'magia', nome: 'Ressurreição Sagrada', efeito: 'reviver_monstro', descricao: 'Invoque 1 monstro do seu cemitério diretamente para o campo.' },
+  { id: 's12', tipo: 'magia', nome: 'Controle Mental', efeito: 'roubar_monstro', descricao: 'Assuma o controle de 1 monstro do oponente até o final do turno.' },
+  { id: 's13', tipo: 'magia', nome: 'Controle Mental', efeito: 'roubar_monstro', descricao: 'Assuma o controle de 1 monstro do oponente até o final do turno.' },
+  { id: 's14', tipo: 'magia', nome: 'Poção da Vida Máxima', efeito: 'curar_2000', descricao: 'Restaura 2000 Pontos de Vida.' },
+  { id: 's15', tipo: 'magia', nome: 'Espada Lendária', efeito: 'buff_1000', descricao: 'Equipe em 1 monstro seu. Ele ganha +1000 de ATK e DEF.' },
+  { id: 's16', tipo: 'magia', nome: 'Espada Lendária', efeito: 'buff_1000', descricao: 'Equipe em 1 monstro seu. Ele ganha +1000 de ATK e DEF.' },
+  { id: 's17', tipo: 'magia', nome: 'Tempestade Mística', efeito: 'destruir_magias_armadilhas', descricao: 'Destrói todas as Magias e Armadilhas no campo do oponente.' },
+  { id: 's18', tipo: 'magia', nome: 'Sacrifício Sombrio', efeito: 'comprar_3_dano_1000', descricao: 'Compre 3 cartas, mas você perde 1000 Pontos de Vida.' },
 
-  // ========== ARMADILHAS (7) ==========
+  // ========== ARMADILHAS (16) ==========
   { id: 't01', tipo: 'armadilha', nome: 'Escudo de Atenas', efeito: 'armadilha_escudo', descricao: 'Quando o oponente atacar, mude o monstro dele para modo de Defesa e cancele o ataque.' },
   { id: 't02', tipo: 'armadilha', nome: 'Escudo de Atenas', efeito: 'armadilha_escudo', descricao: 'Quando o oponente atacar, mude o monstro dele para modo de Defesa e cancele o ataque.' },
   { id: 't03', tipo: 'armadilha', nome: 'Escudo de Atenas', efeito: 'armadilha_escudo', descricao: 'Quando o oponente atacar, mude o monstro dele para modo de Defesa e cancele o ataque.' },
@@ -47,4 +79,14 @@ const ALL_CARDS = [
   { id: 't05', tipo: 'armadilha', nome: 'Ira do Submundo', efeito: 'armadilha_ira', descricao: 'Quando o oponente invocar um monstro com mais de 2000 de ATK, destrua esse monstro imediatamente.' },
   { id: 't06', tipo: 'armadilha', nome: 'Ira do Submundo', efeito: 'armadilha_ira', descricao: 'Quando o oponente invocar um monstro com mais de 2000 de ATK, destrua esse monstro imediatamente.' },
   { id: 't07', tipo: 'armadilha', nome: 'Ira do Submundo', efeito: 'armadilha_ira', descricao: 'Quando o oponente invocar um monstro com mais de 2000 de ATK, destrua esse monstro imediatamente.' },
+  // Novas Armadilhas
+  { id: 't08', tipo: 'armadilha', nome: 'Força Espelhada', efeito: 'armadilha_destruir_atacantes', descricao: 'Quando o oponente declarar um ataque, destrua TODOS os monstros em Posição de Ataque do oponente.' },
+  { id: 't09', tipo: 'armadilha', nome: 'Força Espelhada', efeito: 'armadilha_destruir_atacantes', descricao: 'Quando o oponente declarar um ataque, destrua TODOS os monstros em Posição de Ataque do oponente.' },
+  { id: 't10', tipo: 'armadilha', nome: 'Cilindro Mágico', efeito: 'armadilha_refletir_dano', descricao: 'Quando um monstro do oponente atacar, cancele o ataque e cause dano igual ao ATK dele aos Pontos de Vida do oponente.' },
+  { id: 't11', tipo: 'armadilha', nome: 'Cilindro Mágico', efeito: 'armadilha_refletir_dano', descricao: 'Quando um monstro do oponente atacar, cancele o ataque e cause dano igual ao ATK dele aos Pontos de Vida do oponente.' },
+  { id: 't12', tipo: 'armadilha', nome: 'Julgamento Divino', efeito: 'armadilha_negar_invocacao', descricao: 'Quando o oponente invocar um monstro, negue a invocação e destrua o monstro.' },
+  { id: 't13', tipo: 'armadilha', nome: 'Julgamento Divino', efeito: 'armadilha_negar_invocacao', descricao: 'Quando o oponente invocar um monstro, negue a invocação e destrua o monstro.' },
+  { id: 't14', tipo: 'armadilha', nome: 'Silêncio Arcano', efeito: 'armadilha_negar_magia', descricao: 'Quando o oponente ativar uma carta Mágica, negue o efeito e destrua a carta.' },
+  { id: 't15', tipo: 'armadilha', nome: 'Silêncio Arcano', efeito: 'armadilha_negar_magia', descricao: 'Quando o oponente ativar uma carta Mágica, negue o efeito e destrua a carta.' },
+  { id: 't16', tipo: 'armadilha', nome: 'Chamado da Cova', efeito: 'armadilha_banir_cemiterio', descricao: 'Selecione e remova de jogo 1 monstro do cemitério do oponente, negando seus efeitos.' },
 ];

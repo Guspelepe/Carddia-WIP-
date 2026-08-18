@@ -19,6 +19,17 @@
       Melhor de 3: Jogador 1 <span id="score-p1">0</span> x <span id="score-p2">0</span> Jogador 2 (IA)
     </div>
 
+    <!-- Seletor de dificuldade -->
+    <div style="text-align: center; margin-bottom: 10px;">
+      <label for="dificuldade">Dificuldade:</label>
+      <select id="dificuldade">
+        <option value="facil">Fácil</option>
+        <option value="medio" selected>Médio</option>
+        <option value="dificil">Difícil</option>
+      </select>
+      <button id="btn-iniciar">Iniciar Jogo</button>
+    </div>
+
     <!-- Área do Jogador 2 (IA) -->
     <div class="player-area" id="player2-area">
       <div class="player-info">
@@ -95,7 +106,7 @@
 
   <!-- Scripts -->
   <script src="cards.js"></script>
-  <script src="ai.js"></script>
   <script src="game.js"></script>
+  <script src="ai.js"></script>
 </body>
 </html>
