@@ -1,4 +1,3 @@
-// ai.js
 async function aiTurn(estado) {
   const jogadorId = estado.jogadorAtual;
   const jogador = estado.jogadores[jogadorId];
@@ -21,7 +20,6 @@ async function aiTurn(estado) {
   }
 
   // 2. Usar magias (heurísticas conforme dificuldade)
-  // Magias de remoção de monstros
   const magiasDestruir = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'destruir_inimigo');
@@ -37,14 +35,12 @@ async function aiTurn(estado) {
         alvoIndex = i;
       }
     }
-    // No difícil, só usar se o inimigo tem monstro forte ou se a IA está perdendo
     if (alvoIndex !== -1 && (nivelDificuldade !== 'dificil' || maiorAtk >= 2000 || jogador.hp < 2000)) {
       usarMagia(jogadorId, magia.index, { tipo: 'inimigo', slot: alvoIndex });
       await delay(800);
     }
   }
 
-  // Magias de destruir todos os monstros
   const magiasDestruirTodos = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'destruir_todos_inimigos');
@@ -53,7 +49,6 @@ async function aiTurn(estado) {
     await delay(800);
   }
 
-  // Magias de buff
   const magiasBuff = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && (item.carta.efeito === 'buff_500' || item.carta.efeito === 'buff_1000'));
@@ -73,7 +68,6 @@ async function aiTurn(estado) {
     }
   }
 
-  // Magias de reviver
   const magiasReviver = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'reviver_monstro');
@@ -84,7 +78,6 @@ async function aiTurn(estado) {
     await delay(800);
   }
 
-  // Magias de curar
   const magiasCurar = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'curar_2000');
@@ -93,7 +86,6 @@ async function aiTurn(estado) {
     await delay(800);
   }
 
-  // Magias de roubar monstro
   const magiasRoubar = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'roubar_monstro');
@@ -114,7 +106,6 @@ async function aiTurn(estado) {
     }
   }
 
-  // Magias de comprar cartas
   const magiasComprar = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && (item.carta.efeito === 'comprar_2' || item.carta.efeito === 'comprar_3_dano_1000'));

@@ -7,20 +7,15 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Painel esquerdo com preview e log -->
+  <!-- Painel esquerdo apenas com preview persistente -->
   <div id="left-panel">
     <div id="card-preview" class="card-preview hidden"></div>
-    <div id="log"></div>
   </div>
 
-  <div id="game-container">
-    <h1 style="text-align: center;">Duelo de Cartas</h1>
-    <div id="series-info" style="text-align: center; margin-bottom: 10px; font-weight: bold;">
-      Melhor de 3: Jogador 1 <span id="score-p1">0</span> x <span id="score-p2">0</span> Jogador 2 (IA)
-    </div>
-
-    <!-- Seletor de dificuldade -->
-    <div style="text-align: center; margin-bottom: 10px;">
+  <!-- Container superior direito: título + dificuldade + log -->
+  <div id="top-right-container">
+    <h1>Duelo de Cartas</h1>
+    <div id="dificuldade-wrapper">
       <label for="dificuldade">Dificuldade:</label>
       <select id="dificuldade">
         <option value="facil">Fácil</option>
@@ -28,6 +23,14 @@
         <option value="dificil">Difícil</option>
       </select>
       <button id="btn-iniciar">Iniciar Jogo</button>
+    </div>
+    <div id="log"></div>
+  </div>
+
+  <!-- Área principal do jogo -->
+  <div id="game-container">
+    <div id="series-info" style="text-align: center; margin-bottom: 10px; font-weight: bold;">
+      Melhor de 3: Jogador 1 <span id="score-p1">0</span> x <span id="score-p2">0</span> Jogador 2 (IA)
     </div>
 
     <!-- Área do Jogador 2 (IA) -->

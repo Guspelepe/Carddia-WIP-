@@ -34,7 +34,6 @@ const ALL_CARDS = [
   // ========== MONSTROS COM EFEITO (16) ==========
   { id: 'm25', tipo: 'monstro', nome: 'Fada Curandeira', atk: 800, def: 800, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
   { id: 'm26', tipo: 'monstro', nome: 'Fênix Renascida', atk: 2000, def: 1500, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
-  // Novos Monstros com Efeito
   { id: 'm31', tipo: 'monstro', nome: 'Necromante Sombrio', atk: 1900, def: 1500, custo: 0, efeito: 'ao_invocar_revive_monstro' },
   { id: 'm32', tipo: 'monstro', nome: 'Ladino das Sombras', atk: 1200, def: 800, custo: 0, efeito: 'ignora_defesa_ataque_direto' },
   { id: 'm33', tipo: 'monstro', nome: 'Paladino da Luz', atk: 2500, def: 2000, custo: 0, efeito: 'ao_invocar_destroi_magia_armadilha' },
@@ -58,7 +57,6 @@ const ALL_CARDS = [
   { id: 's05', tipo: 'magia', nome: 'Raios de Zeus', efeito: 'destruir_inimigo', descricao: 'Destrói 1 monstro inimigo na Zona de Monstros.' },
   { id: 's06', tipo: 'magia', nome: 'Barganha Divina', efeito: 'comprar_2', descricao: 'Compre 2 cartas do seu deck imediatamente.' },
   { id: 's07', tipo: 'magia', nome: 'Barganha Divina', efeito: 'comprar_2', descricao: 'Compre 2 cartas do seu deck imediatamente.' },
-  // Novas Magias
   { id: 's08', tipo: 'magia', nome: 'Chuva de Meteoros', efeito: 'destruir_todos_inimigos', descricao: 'Destrói todos os monstros na Zona de Monstros do oponente.' },
   { id: 's09', tipo: 'magia', nome: 'Chuva de Meteoros', efeito: 'destruir_todos_inimigos', descricao: 'Destrói todos os monstros na Zona de Monstros do oponente.' },
   { id: 's10', tipo: 'magia', nome: 'Ressurreição Sagrada', efeito: 'reviver_monstro', descricao: 'Invoque 1 monstro do seu cemitério diretamente para o campo.' },
@@ -79,7 +77,6 @@ const ALL_CARDS = [
   { id: 't05', tipo: 'armadilha', nome: 'Ira do Submundo', efeito: 'armadilha_ira', descricao: 'Quando o oponente invocar um monstro com mais de 2000 de ATK, destrua esse monstro imediatamente.' },
   { id: 't06', tipo: 'armadilha', nome: 'Ira do Submundo', efeito: 'armadilha_ira', descricao: 'Quando o oponente invocar um monstro com mais de 2000 de ATK, destrua esse monstro imediatamente.' },
   { id: 't07', tipo: 'armadilha', nome: 'Ira do Submundo', efeito: 'armadilha_ira', descricao: 'Quando o oponente invocar um monstro com mais de 2000 de ATK, destrua esse monstro imediatamente.' },
-  // Novas Armadilhas
   { id: 't08', tipo: 'armadilha', nome: 'Força Espelhada', efeito: 'armadilha_destruir_atacantes', descricao: 'Quando o oponente declarar um ataque, destrua TODOS os monstros em Posição de Ataque do oponente.' },
   { id: 't09', tipo: 'armadilha', nome: 'Força Espelhada', efeito: 'armadilha_destruir_atacantes', descricao: 'Quando o oponente declarar um ataque, destrua TODOS os monstros em Posição de Ataque do oponente.' },
   { id: 't10', tipo: 'armadilha', nome: 'Cilindro Mágico', efeito: 'armadilha_refletir_dano', descricao: 'Quando um monstro do oponente atacar, cancele o ataque e cause dano igual ao ATK dele aos Pontos de Vida do oponente.' },
