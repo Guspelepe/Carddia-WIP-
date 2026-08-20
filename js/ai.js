@@ -9,7 +9,6 @@ window.aiEscolherCarta = escolherCartaParaIA;
 
 // ==================== SELEÇÃO DE CARTAS PESADA (NATURAL E PODEROSA) ====================
 function montarDeckIA(jogadorId, deckCompleto, nivel) {
-    // IDs das cartas de cada Tier (Nível de poder)
     const tier1Ids = ['m10','m11','m19','m23','m24','m27','m28','m29','m30','m37','m39','s08','s09','s12','s13','s15','t10','t11'];
     const tier2Ids = ['m05','m08','m16','m21','m25','m26','m32','m33','m34','m35','m36','m40','m41','m42','s04','s05','s10','s11','s14','s16','t08','t09'];
     const tier3Ids = ['m01','m02','m03','m04','m06','m07','m09','m12','m13','m14','m15','m17','m18','m20','m22','s01','s02','s03','s06','s07','s17','s18'];
@@ -22,7 +21,6 @@ function montarDeckIA(jogadorId, deckCompleto, nivel) {
     let traps = deckCompleto.filter(c => trapIds.includes(c.id));
     
     if (nivel === 'facil') {
-        // IA Fácil: Monstros fracos e poucas cartas mágicas (para a pessoa aprender)
         const weakMonsters = embaralhar([...tier3]).slice(0, 16);
         const weakSpells = embaralhar([...tier3.filter(c => c.tipo === 'magia')]).slice(0, 1);
         const weakTraps = embaralhar([...traps]).slice(0, 1);
@@ -31,7 +29,6 @@ function montarDeckIA(jogadorId, deckCompleto, nivel) {
         return embaralhar(finalDeck).slice(0, 20);
 
     } else if (nivel === 'medio') {
-        // IA Média: Um deck equilibrado, com alguns monstros médios e umas magias básicas
         const chosenStrong = embaralhar([...tier2]).slice(0, 3); 
         const chosenWeak = embaralhar([...tier3]).slice(0, 10);
         const chosenSpells = embaralhar([...tier2.filter(c => c.tipo === 'magia'), ...tier3.filter(c => c.tipo === 'magia')]).slice(0, 3);
@@ -41,13 +38,10 @@ function montarDeckIA(jogadorId, deckCompleto, nivel) {
         return embaralhar(finalDeck).slice(0, 20);
 
     } else { // DIFICIL
-        // IA Difícil: Alta concentração de monstros fortes e magias/poderosas.
-        // A distribuição é NATURAL, ela não tem só os monstros mais fortes, tem uma mistura, 
-        // mas a média de poder é muito maior que a do jogador.
-        const chosenStrong = embaralhar([...tier1]).slice(0, 5); // 5 Ultra fortes
-        const chosenMid = embaralhar([...tier2]).slice(0, 4);    // 4 Monstros fortes
-        const chosenWeak = embaralhar([...tier3]).slice(0, 3);   // 3 Fracos
-        const chosenSpells = embaralhar([...tier1.filter(c => c.tipo === 'magia'), ...tier2.filter(c => c.tipo === 'magia')]).slice(0, 3);
+        const chosenStrong = embaralhar([...tier1]).slice(0, 6); // Mais monstros fortes
+        const chosenMid = embaralhar([...tier2]).slice(0, 3);    
+        const chosenWeak = embaralhar([...tier3]).slice(0, 2);   
+        const chosenSpells = embaralhar([...tier1.filter(c => c.tipo === 'magia'), ...tier2.filter(c => c.tipo === 'magia')]).slice(0, 4);
         const chosenTraps = embaralhar([...tier1.filter(c => c.tipo === 'armadilha'), ...tier2.filter(c => c.tipo === 'armadilha')]).slice(0, 2);
         finalDeck = [...chosenStrong, ...chosenMid, ...chosenWeak, ...chosenSpells, ...chosenTraps];
         while (finalDeck.length < 20) { finalDeck.push(tier3[0]); }
@@ -83,7 +77,7 @@ function escolherCartaParaIA(jogadorId) {
     return melhorCarta;
 }
 
-// ==================== LÓGICA DE ATAQUE DA IA ====================
+// ==================== LÓGICA DE ATAQUE DA IA (INTELIGENTE) ====================
 async function executarAtaquesAutomaticos(jogadorId) {
   const jogador = estado.jogadores[jogadorId];
   const inimigoId = jogadorId === 1 ? 2 : 1;
@@ -94,71 +88,101 @@ async function executarAtaquesAutomaticos(jogadorId) {
     if (!monstro || monstro.posicao !== 'ataque' || monstro.ataquesRestantes === 0 || monstro.efeito === 'nao_pode_atacar') continue;
 
     // 1. Verifica armadilhas do oponente
+    let continuarAtaque = true;
     for (let j = 0; j < inimigo.zonaMagias.length; j++) {
       const armadilha = inimigo.zonaMagias[j];
       if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo) {
         if (armadilha.efeito === 'armadilha_escudo' && monstro.efeito !== 'imune_a_armadilhas') {
           armadilha.viradaParaBaixo = false; render(); animarCarta(inimigoId, 'magia', j, 'trap');
           adicionarLog(`Armadilha "Escudo de Atenas" ativada!`); await delay(800);
-          monstro.posicao = 'defesa'; monstro.ataquesRestantes--; inimigo.zonaMagias[j] = null; render(); continue;
+          monstro.posicao = 'defesa'; monstro.ataquesRestantes--; inimigo.zonaMagias[j] = null; render(); 
+          continuarAtaque = false; break;
         } else if (armadilha.efeito === 'armadilha_destruir_atacantes' && monstro.efeito !== 'imune_a_armadilhas') {
           armadilha.viradaParaBaixo = false; render(); animarCarta(inimigoId, 'magia', j, 'trap');
           adicionarLog(`Armadilha "Força Espelhada" ativada!`); await delay(800);
           for (let k = 0; k < jogador.zonaMonstros.length; k++) { const m = jogador.zonaMonstros[k]; if (m && m.posicao === 'ataque' && m.efeito !== 'imune_a_armadilhas' && m.efeito !== 'nao_pode_ser_destruido_por_efeito') { destruirMonstro(jogadorId, k, 'Força Espelhada'); } }
-          inimigo.zonaMagias[j] = null; render(); continue;
+          inimigo.zonaMagias[j] = null; render();
+          continuarAtaque = false; break;
         } else if (armadilha.efeito === 'armadilha_refletir_dano' && monstro.efeito !== 'imune_a_armadilhas') {
           armadilha.viradaParaBaixo = false; render(); animarCarta(inimigoId, 'magia', j, 'trap');
           adicionarLog(`Armadilha "Cilindro Mágico" ativada!`); await delay(800);
           jogador.hp -= monstro.atk; adicionarLog(`${monstro.nome} teve seu ataque refletido! ${nomeJogador(jogadorId)} perdeu ${monstro.atk} HP.`);
-          monstro.ataquesRestantes--; inimigo.zonaMagias[j] = null; if (verificarFimDeDuelo()) return; render(); continue;
+          monstro.ataquesRestantes--; inimigo.zonaMagias[j] = null; if (verificarFimDeDuelo()) return; render();
+          continuarAtaque = false; break;
         }
       }
     }
+    if (!continuarAtaque) continue;
 
     const monstrosInimigos = inimigo.zonaMonstros.filter(m => m !== null);
-    // 2. Se não tiver monstros inimigos, ataca diretamente
     if (monstrosInimigos.length === 0) {
       inimigo.hp -= monstro.atk; adicionarLog(`${monstro.nome} atacou diretamente! Computador perdeu ${monstro.atk} HP.`);
       monstro.ataquesRestantes--; if (verificarFimDeDuelo()) return; render(); await delay(800); continue;
     }
 
-    // 3. Analisa os alvos
-    let alvoIndex = -1;
-    let melhorDiferenca = -Infinity; // Prioridade 1: Matar
-    let alvoSacrificioIndex = -1;
-    let menorDanoRecebido = Infinity; // Prioridade 2: Atacar o mais fraco (Modo Difícil)
+    // -----------------------------------------------------
+    // 2. Lógica Inteligente de Escolha de Alvo (NOVO)
+    // -----------------------------------------------------
+    let alvoMorte = -1; // Prioridade 1: Matar o inimigo
+    let melhorDiferencaMorte = -Infinity;
+    
+    let alvoEscudo = -1; // Prioridade 2: Atacar em defesa (mesmo que não destrua, não sofre dano)
+    let menorDef = Infinity;
+
+    let alvoSacrificio = -1; // Prioridade 3: Sacrifício (se atacar um atacante forte, leva pouco dano)
+    let menorDanoRecebido = Infinity;
 
     for (let j = 0; j < inimigo.zonaMonstros.length; j++) {
       const defensor = inimigo.zonaMonstros[j];
       if (!defensor) continue;
       
       let diff = -999999;
-      let podeAtacar = false;
-      if (defensor.posicao === 'ataque') { diff = monstro.atk - defensor.atk; podeAtacar = true; } 
-      else { if (monstro.efeito === 'dano_perfurante' || monstro.efeito === 'ignora_defesa_ataque_direto') { diff = monstro.atk - defensor.def; podeAtacar = true; } }
-      if (!podeAtacar) continue;
+      let danoRecebido = 0;
 
-      // Lógica de escolha inteligente de alvo
-      if (diff > 0) { // Vai conseguir matar o alvo
-        if (diff > melhorDiferenca) { melhorDiferenca = diff; alvoIndex = j; }
-      } else if (defensor.posicao === 'ataque') { // Vai perder se atacar
-        let danoRecebido = Math.abs(diff);
-        if (danoRecebido < menorDanoRecebido) { menorDanoRecebido = danoRecebido; alvoSacrificioIndex = j; }
+      if (defensor.posicao === 'ataque') {
+        diff = monstro.atk - defensor.atk;
+        danoRecebido = Math.abs(diff);
+        
+        if (diff > 0) { // Consegue matar
+            if (diff > melhorDiferencaMorte) { melhorDiferencaMorte = diff; alvoMorte = j; }
+        } else { // Vai perder o monstro
+            if (danoRecebido < menorDanoRecebido) { menorDanoRecebido = danoRecebido; alvoSacrificio = j; }
+        }
+      } else { // Defesa
+        diff = monstro.atk - defensor.def;
+        if (diff > 0) { // Consegue matar o monstro em defesa
+            if (diff > melhorDiferencaMorte) { melhorDiferencaMorte = diff; alvoMorte = j; }
+        } else { // Não consegue matar, mas também não sofre dano. Ótimo "escudo" para bater.
+            if (diff > menorDef) { // Quanto menos def ele tiver, melhor
+                menorDef = diff; 
+                alvoEscudo = j;
+            }
+        }
       }
     }
 
-    if (alvoIndex !== -1) { // Mata o inimigo
-      await animarAtaque(i, alvoIndex, jogadorId, inimigoId);
-      resolverBatalha(jogadorId, inimigoId, i, alvoIndex);
-      monstro.ataquesRestantes--; render(); await delay(800);
-    } else if (nivelDificuldade === 'dificil' && alvoSacrificioIndex !== -1) {
-      // MODO DIFÍCIL: Mesmo não conseguindo matar, ataca taticamente (sacrifício calculado)
-      await animarAtaque(i, alvoSacrificioIndex, jogadorId, inimigoId);
-      adicionarLog(`${monstro.nome} atacou taticamente (modo difícil).`);
-      resolverBatalha(jogadorId, inimigoId, i, alvoSacrificioIndex);
-      monstro.ataquesRestantes--; render(); await delay(800);
+    // Aplicando a prioridade:
+    if (alvoMorte !== -1) {
+        // 1. Se puder matar alguém, faz isso (seja em ataque ou defesa)
+        await animarAtaque(i, alvoMorte, jogadorId, inimigoId);
+        resolverBatalha(jogadorId, inimigoId, i, alvoMorte);
+        monstro.ataquesRestantes--; render(); await delay(800);
+    } else if (nivelDificuldade === 'dificil' && alvoEscudo !== -1) {
+        // 2. No difícil, se não puder matar, mas tiver um monstro em defesa, ataca ele de graça (toma 0 de dano)
+        await animarAtaque(i, alvoEscudo, jogadorId, inimigoId);
+        adicionarLog(`${monstro.nome} atacou a defesa do oponente (modo difícil).`);
+        resolverBatalha(jogadorId, inimigoId, i, alvoEscudo);
+        monstro.ataquesRestantes--; render(); await delay(800);
+    } else if (nivelDificuldade === 'dificil' && alvoSacrificio !== -1) {
+        // 3. No difícil, último recurso: Sacrifica o monstro no que dá menos dano a ela
+        await animarAtaque(i, alvoSacrificio, jogadorId, inimigoId);
+        adicionarLog(`${monstro.nome} atacou taticamente em sacrifício (modo difícil).`);
+        resolverBatalha(jogadorId, inimigoId, i, alvoSacrificio);
+        monstro.ataquesRestantes--; render(); await delay(800);
     } else {
-      adicionarLog(`${monstro.nome} não atacou (sem alvo favorável).`); continue;
+        // 4. Se não tiver alvo nenhum favorável, fica parado (em modos mais baixos)
+        adicionarLog(`${monstro.nome} não atacou (sem alvo favorável).`);
+        continue;
     }
   }
 }
@@ -169,7 +193,7 @@ async function aiTurn(estado) {
   const jogador = estado.jogadores[jogadorId];
   const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  // Análise inicial do inimigo (Para decidir posição de defesa)
+  // Análise inicial do inimigo
   const inimigo = estado.jogadores[jogadorId === 1 ? 2 : 1];
   const inimigoMonstros = inimigo.zonaMonstros.filter(m => m !== null);
   let maiorForcaInimiga = 0;
@@ -178,9 +202,10 @@ async function aiTurn(estado) {
   }
 
   // ==========================================================
-  // PASSO 1: Usar magias táticas primeiro
+  // PASSO 1: Usar magias táticas primeiro (Reforçado)
   // ==========================================================
-  // Prioriza as magias de destruir todos (se houver) para limpar o campo do inimigo
+  
+  // 1.1 Destruir Todos (Prioridade máxima)
   const magiasDestruirTodos = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'destruir_todos_inimigos');
@@ -189,7 +214,7 @@ async function aiTurn(estado) {
     await delay(800);
   }
 
-  // Magias de roubo e destruição específica
+  // 1.2 Roubar Monstro
   const magiasRoubar = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'roubar_monstro');
@@ -197,12 +222,14 @@ async function aiTurn(estado) {
     const inimigoLocal = estado.jogadores[jogadorId === 1 ? 2 : 1];
     let alvoIndex = -1; let maiorAtk = 0;
     for (let i = 0; i < inimigoLocal.zonaMonstros.length; i++) { const m = inimigoLocal.zonaMonstros[i]; if (m && m.atk > maiorAtk) { maiorAtk = m.atk; alvoIndex = i; } }
-    if (alvoIndex !== -1 && (nivelDificuldade !== 'dificil' || maiorAtk >= 2000)) {
+    // No difícil, rouba monstros com 1800+ de ataque
+    if (alvoIndex !== -1 && (nivelDificuldade !== 'dificil' || maiorAtk >= 1800)) {
       usarMagia(jogadorId, magiasRoubar[0].index, { tipo: 'inimigo', slot: alvoIndex });
       await delay(800);
     }
   }
 
+  // 1.3 Destruir Inimigo
   const magiasDestruir = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'destruir_inimigo');
@@ -210,7 +237,7 @@ async function aiTurn(estado) {
     const inimigoLocal = estado.jogadores[jogadorId === 1 ? 2 : 1];
     let alvoIndex = -1; let maiorAtk = 0;
     for (let i = 0; i < inimigoLocal.zonaMonstros.length; i++) { const m = inimigoLocal.zonaMonstros[i]; if (m && m.atk > maiorAtk) { maiorAtk = m.atk; alvoIndex = i; } }
-    if (alvoIndex !== -1 && (nivelDificuldade !== 'dificil' || maiorAtk >= 2000 || jogador.hp < 2000)) {
+    if (alvoIndex !== -1 && (nivelDificuldade !== 'dificil' || maiorAtk >= 1800)) {
       usarMagia(jogadorId, magia.index, { tipo: 'inimigo', slot: alvoIndex });
       await delay(800);
     }
@@ -228,7 +255,6 @@ async function aiTurn(estado) {
     const slotVazio = jogador.zonaMonstros.findIndex(slot => slot === null);
     if (slotVazio !== -1) {
       let posicao = 'ataque';
-      // Lógica de defesa: Se for muito mais fraco que o inimigo, se defende
       if (item.carta.atk < maiorForcaInimiga * 0.8 && inimigoMonstros.length > 0) { posicao = 'defesa'; }
       invocarMonstro(jogadorId, item.index, slotVazio, posicao);
       await delay(800);
@@ -236,7 +262,7 @@ async function aiTurn(estado) {
   }
 
   // ==========================================================
-  // PASSO 3: Magias de Buff (Aplicadas após invocar)
+  // PASSO 3: Magias de Apoio (Buff, Reviver, Curar, Comprar)
   // ==========================================================
   const magiasBuff = jogador.mao
     .map((carta, index) => ({ carta, index }))
@@ -275,7 +301,7 @@ async function aiTurn(estado) {
   }
 
   // ==========================================================
-  // PASSO 4: Baixar armadilhas
+  // PASSO 4: Baixar armadilhas (Sempre tentar preencher)
   // ==========================================================
   const armadilhas = jogador.mao
     .map((carta, index) => ({ carta, index }))

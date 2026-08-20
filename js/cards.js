@@ -25,14 +25,13 @@ const ALL_CARDS = [
   { id: 'm22', tipo: 'monstro', nome: 'Múmia', atk: 1000, def: 1800, custo: 0, efeito: null },
   { id: 'm23', tipo: 'monstro', nome: 'Esfinge', atk: 2300, def: 2000, custo: 0, efeito: null },
   { id: 'm24', tipo: 'monstro', nome: 'Quimera', atk: 2400, def: 1800, custo: 0, efeito: null },
-  // Novos Monstros Normais (Poderosos)
   { id: 'm25', tipo: 'monstro', nome: 'Dragão Imperador', atk: 3000, def: 2500, custo: 0, efeito: null },
   { id: 'm26', tipo: 'monstro', nome: 'Colosso de Obsidiana', atk: 2800, def: 3000, custo: 0, efeito: null },
   { id: 'm27', tipo: 'monstro', nome: 'Deus da Guerra', atk: 3200, def: 2800, custo: 0, efeito: null },
   { id: 'm28', tipo: 'monstro', nome: 'Besta do Apocalipse', atk: 3500, def: 2000, custo: 0, efeito: null },
   { id: 'm29', tipo: 'monstro', nome: 'Guardião do Portão', atk: 0, def: 3500, custo: 0, efeito: null },
 
-  // ========== MONSTROS COM EFEITO (16) ==========
+  // ========== MONSTROS COM EFEITO (Originais) ==========
   { id: 'm30', tipo: 'monstro', nome: 'Fada Curandeira', atk: 800, def: 800, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
   { id: 'm31', tipo: 'monstro', nome: 'Fênix Renascida', atk: 2000, def: 1500, custo: 0, efeito: 'quando_morre_ganha_500_vida' },
   { id: 'm32', tipo: 'monstro', nome: 'Necromante Sombrio', atk: 1900, def: 1500, custo: 0, efeito: 'ao_invocar_revive_monstro' },
@@ -48,7 +47,33 @@ const ALL_CARDS = [
   { id: 'm42', tipo: 'monstro', nome: 'Vampiro Nobre', atk: 2100, def: 1500, custo: 0, efeito: 'cura_vida_igual_dano_causado' },
   { id: 'm43', tipo: 'monstro', nome: 'Valquíria', atk: 2100, def: 1600, custo: 0, efeito: 'imune_a_armadilhas' },
 
-  // ========== MAGIAS (18) ==========
+  // ========== MONSTROS COM EFEITO (Lote 1 e 2) ==========
+  { id: 'm44', tipo: 'monstro', nome: 'Assassino Invisível', atk: 1800, def: 500, custo: 0, efeito: 'ignora_defesa_ataque_direto' },
+  { id: 'm45', tipo: 'monstro', nome: 'Golem de Cristal', atk: 1000, def: 3000, custo: 0, efeito: 'imune_a_magias' },
+  { id: 'm46', tipo: 'monstro', nome: 'Besta Eletrizante', atk: 2200, def: 1800, custo: 0, efeito: 'ao_invocar_destroi_armadilha' },
+  { id: 'm47', tipo: 'monstro', nome: 'Clérigo da Aurora', atk: 1400, def: 2000, custo: 0, efeito: 'ao_invocar_ganha_1000_vida' },
+  { id: 'm48', tipo: 'monstro', nome: 'Senhor da Gravidade', atk: 0, def: 2500, custo: 0, efeito: 'ao_invocar_muda_inimigos_para_defesa' },
+  { id: 'm49', tipo: 'monstro', nome: 'Dragão de Sangue', atk: 2900, def: 2000, custo: 0, efeito: 'paga_500_vida_para_atacar' },
+  { id: 'm50', tipo: 'monstro', nome: 'Mímico Ilusionista', atk: 1500, def: 1500, custo: 0, efeito: 'copia_atk_do_alvo' },
+  { id: 'm51', tipo: 'monstro', nome: 'Golem de Lava', atk: 2600, def: 2600, custo: 0, efeito: 'ao_invocar_causa_500_dano_em_si' },
+  { id: 'm52', tipo: 'monstro', nome: 'Mestre das Feras', atk: 1800, def: 1200, custo: 0, efeito: 'monstros_aliados_ganham_300_atk' },
+  { id: 'm53', tipo: 'monstro', nome: 'Cavaleiro de Gelo', atk: 1700, def: 1600, custo: 0, efeito: 'inimigo_atacado_nao_pode_atacar_proximo_turno' },
+  { id: 'm54', tipo: 'monstro', nome: 'Verme do Deserto', atk: 2000, def: 1000, custo: 0, efeito: 'dano_perfurante' },
+  { id: 'm55', tipo: 'monstro', nome: 'Oráculo Cego', atk: 0, def: 2000, custo: 0, efeito: 'ao_invocar_olhar_mao_oponente' },
+
+  // ========== MONSTROS COM EFEITO (Lote 3 - Novos!) ==========
+  { id: 'm56', tipo: 'monstro', nome: 'Samurai Escarlate', atk: 2000, def: 1500, custo: 0, efeito: 'ao_atacar_destroi_monstro_em_defesa' },
+  { id: 'm57', tipo: 'monstro', nome: 'Druida Ancião', atk: 1200, def: 1800, custo: 0, efeito: 'final_turno_cura_300_por_aliado' },
+  { id: 'm58', tipo: 'monstro', nome: 'Cavaleiro Espelho', atk: 0, def: 0, custo: 0, efeito: 'batalha_iguala_atk_def_do_inimigo' },
+  { id: 'm59', tipo: 'monstro', nome: 'Rainha das Harpias', atk: 2200, def: 1400, custo: 0, efeito: 'ao_invocar_destroi_todas_magias' },
+  { id: 'm60', tipo: 'monstro', nome: 'Colosso Intransponível', atk: 500, def: 4000, custo: 0, efeito: 'nao_pode_mudar_para_ataque' },
+  { id: 'm61', tipo: 'monstro', nome: 'Ninja das Sombras', atk: 1600, def: 800, custo: 0, efeito: 'se_oponente_tem_armadilha_ataque_direto' },
+  { id: 'm62', tipo: 'monstro', nome: 'Máquina de Cerco', atk: 3000, def: 1000, custo: 0, efeito: 'nao_pode_atacar_no_turno_invocado' },
+  { id: 'm63', tipo: 'monstro', nome: 'Espectro Congelante', atk: 1900, def: 1900, custo: 0, efeito: 'ao_destruir_inimigo_oponente_pula_compra' },
+  { id: 'm64', tipo: 'monstro', nome: 'Golem de Cristal Negro', atk: 2400, def: 2000, custo: 0, efeito: 'imune_a_monstros_de_efeito' },
+  { id: 'm65', tipo: 'monstro', nome: 'Cobra Hipnótica', atk: 800, def: 1200, custo: 0, efeito: 'ao_causar_dano_oponente_descarta_1_carta' },
+
+  // ========== MAGIAS (Originais) ==========
   { id: 's01', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },
   { id: 's02', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },
   { id: 's03', tipo: 'magia', nome: 'Aumento de Fé', efeito: 'buff_500', descricao: 'Escolha 1 monstro seu, ele ganha +500 de ATK.' },
@@ -66,7 +91,32 @@ const ALL_CARDS = [
   { id: 's15', tipo: 'magia', nome: 'Tempestade Mística', efeito: 'destruir_magias_armadilhas', descricao: 'Destrói todas as Magias e Armadilhas no campo do oponente.' },
   { id: 's16', tipo: 'magia', nome: 'Sacrifício Sombrio', efeito: 'comprar_3_dano_1000', descricao: 'Compre 3 cartas, mas você perde 1000 Pontos de Vida.' },
 
-  // ========== ARMADILHAS (16) ==========
+  // ========== MAGIAS (Lote 1 e 2) ==========
+  { id: 's17', tipo: 'magia', nome: 'Fúria do Dragão', efeito: 'buff_1500_dano_500', descricao: 'Escolha 1 monstro seu. Ele ganha +1500 de ATK, mas você perde 500 Pontos de Vida.' },
+  { id: 's18', tipo: 'magia', nome: 'Fúria do Dragão', efeito: 'buff_1500_dano_500', descricao: 'Escolha 1 monstro seu. Ele ganha +1500 de ATK, mas você perde 500 Pontos de Vida.' },
+  { id: 's19', tipo: 'magia', nome: 'Ventos Furiosos', efeito: 'devolver_monstro_mao', descricao: 'Devolva 1 monstro da Zona de Monstros do oponente para a mão dele.' },
+  { id: 's20', tipo: 'magia', nome: 'Ventos Furiosos', efeito: 'devolver_monstro_mao', descricao: 'Devolva 1 monstro da Zona de Monstros do oponente para a mão dele.' },
+  { id: 's21', tipo: 'magia', nome: 'Escudo Sagrado', efeito: 'buff_defesa_2000', descricao: 'Escolha 1 monstro seu. Ele ganha +2000 de DEF permanentemente.' },
+  { id: 's22', tipo: 'magia', nome: 'Visão do Futuro', efeito: 'olhar_mao_comprar_1', descricao: 'Revele a mão do seu oponente até o fim do turno e compre 1 carta.' },
+  { id: 's23', tipo: 'magia', nome: 'Troca Justa', efeito: 'trocar_vida_por_cartas', descricao: 'Perca 2000 Pontos de Vida e compre 2 cartas.' },
+  { id: 's24', tipo: 'magia', nome: 'Ira dos Deuses', efeito: 'dano_direto_1000', descricao: 'Cause 1000 de dano direto aos Pontos de Vida do oponente.' },
+  { id: 's25', tipo: 'magia', nome: 'Ira dos Deuses', efeito: 'dano_direto_1000', descricao: 'Cause 1000 de dano direto aos Pontos de Vida do oponente.' },
+  { id: 's26', tipo: 'magia', nome: 'Fonte da Juventude', efeito: 'curar_1000_por_monstro', descricao: 'Ganhe 1000 Pontos de Vida para cada monstro que você controla.' },
+  { id: 's27', tipo: 'magia', nome: 'Manto da Invisibilidade', efeito: 'imune_ataques_turno', descricao: 'Escolha 1 monstro seu. Ele não pode ser atacado até o final do turno do oponente.' },
+
+  // ========== MAGIAS (Lote 3 - Novos!) ==========
+  { id: 's28', tipo: 'magia', nome: 'Poção da Fúria', efeito: 'ataque_duplo_destroi_no_fim', descricao: 'Um monstro seu pode atacar duas vezes neste turno, mas é destruído na Fase Final.' },
+  { id: 's29', tipo: 'magia', nome: 'Poção da Fúria', efeito: 'ataque_duplo_destroi_no_fim', descricao: 'Um monstro seu pode atacar duas vezes neste turno, mas é destruído na Fase Final.' },
+  { id: 's30', tipo: 'magia', nome: 'Oferenda de Sangue', efeito: 'metade_vida_compra_3', descricao: 'Pague metade dos seus Pontos de Vida atuais e compre 3 cartas.' },
+  { id: 's31', tipo: 'magia', nome: 'Correntes da Restrição', efeito: 'prende_monstro_inimigo', descricao: 'Escolha 1 monstro inimigo. Ele não pode atacar nem mudar de posição de batalha.' },
+  { id: 's32', tipo: 'magia', nome: 'Correntes da Restrição', efeito: 'prende_monstro_inimigo', descricao: 'Escolha 1 monstro inimigo. Ele não pode atacar nem mudar de posição de batalha.' },
+  { id: 's33', tipo: 'magia', nome: 'Espada Amaldiçoada', efeito: 'buff_2000_dano_1000_por_turno', descricao: 'Equipe em um monstro seu. Ele ganha +2000 ATK, mas você perde 1000 Pontos de Vida por turno.' },
+  { id: 's34', tipo: 'magia', nome: 'Zona de Antimagia', efeito: 'bloqueia_magias_turno', descricao: 'Nenhum jogador pode ativar cartas Mágicas até o final do próximo turno.' },
+  { id: 's35', tipo: 'magia', nome: 'Transfusão Equilibrada', efeito: 'iguala_vida_menor', descricao: 'Se a sua Vida for menor que a do oponente, cure a diferença.' },
+  { id: 's36', tipo: 'magia', nome: 'Punição dos Fracos', efeito: 'destruir_monstros_baixo_atk', descricao: 'Destrói todos os monstros no campo com 1500 ou menos de ATK.' },
+  { id: 's37', tipo: 'magia', nome: 'Renovação Tática', efeito: 'devolve_mao_compra', descricao: 'Devolva todas as cartas da sua mão para o deck, embaralhe e compre a mesma quantidade.' },
+
+  // ========== ARMADILHAS (Originais) ==========
   { id: 't01', tipo: 'armadilha', nome: 'Escudo de Atenas', efeito: 'armadilha_escudo', descricao: 'Quando o oponente atacar, mude o monstro dele para modo de Defesa e cancele o ataque.' },
   { id: 't02', tipo: 'armadilha', nome: 'Escudo de Atenas', efeito: 'armadilha_escudo', descricao: 'Quando o oponente atacar, mude o monstro dele para modo de Defesa e cancele o ataque.' },
   { id: 't03', tipo: 'armadilha', nome: 'Escudo de Atenas', efeito: 'armadilha_escudo', descricao: 'Quando o oponente atacar, mude o monstro dele para modo de Defesa e cancele o ataque.' },
@@ -82,4 +132,29 @@ const ALL_CARDS = [
   { id: 't13', tipo: 'armadilha', nome: 'Julgamento Divino', efeito: 'armadilha_negar_invocacao', descricao: 'Quando o oponente invocar um monstro, negue a invocação e destrua o monstro.' },
   { id: 't14', tipo: 'armadilha', nome: 'Silêncio Arcano', efeito: 'armadilha_negar_magia', descricao: 'Quando o oponente ativar uma carta Mágica, negue o efeito e destrua a carta.' },
   { id: 't15', tipo: 'armadilha', nome: 'Silêncio Arcano', efeito: 'armadilha_negar_magia', descricao: 'Quando o oponente ativar uma carta Mágica, negue o efeito e destrua a carta.' },
+
+  // ========== ARMADILHAS (Lote 1 e 2) ==========
+  { id: 't16', tipo: 'armadilha', nome: 'Areia Movediça', efeito: 'armadilha_zerar_ataque', descricao: 'Quando o oponente atacar, o ATK do monstro atacante se torna 0.' },
+  { id: 't17', tipo: 'armadilha', nome: 'Areia Movediça', efeito: 'armadilha_zerar_ataque', descricao: 'Quando o oponente atacar, o ATK do monstro atacante se torna 0.' },
+  { id: 't18', tipo: 'armadilha', nome: 'Maldição do Sangue', efeito: 'armadilha_dano_invocacao_1000', descricao: 'Quando o oponente invocar um monstro, ele perde 1000 Pontos de Vida.' },
+  { id: 't19', tipo: 'armadilha', nome: 'Maldição do Sangue', efeito: 'armadilha_dano_invocacao_1000', descricao: 'Quando o oponente invocar um monstro, ele perde 1000 Pontos de Vida.' },
+  { id: 't20', tipo: 'armadilha', nome: 'Rede de Captura', efeito: 'armadilha_curar_pelo_ataque', descricao: 'Quando um monstro inimigo atacar, negue o ataque e você ganha Pontos de Vida iguais ao ATK dele.' },
+  { id: 't21', tipo: 'armadilha', nome: 'Grito de Pânico', efeito: 'armadilha_mudar_todos_defesa', descricao: 'Quando o oponente declarar um ataque, mude todos os monstros dele para modo de Defesa.' },
+  { id: 't22', tipo: 'armadilha', nome: 'Reflexo Sombrio', efeito: 'armadilha_destruir_maior_atk', descricao: 'Quando o oponente atacar, negue o ataque e destrua o monstro com o maior ATK no campo dele.' },
+  { id: 't23', tipo: 'armadilha', nome: 'Buraco Negro Portátil', efeito: 'armadilha_destruir_todos', descricao: 'Quando o oponente invocar um monstro, destrua TODOS os monstros no campo.' },
+  { id: 't24', tipo: 'armadilha', nome: 'Buraco Negro Portátil', efeito: 'armadilha_destruir_todos', descricao: 'Quando o oponente invocar um monstro, destrua TODOS os monstros no campo.' },
+  { id: 't25', tipo: 'armadilha', nome: 'Ilusão Ótica', efeito: 'armadilha_desviar_ataque', descricao: 'Quando um monstro do oponente atacar, mude o alvo do ataque para outro monstro do oponente.' },
+  { id: 't26', tipo: 'armadilha', nome: 'Falso Tesouro', efeito: 'armadilha_dano_comprar', descricao: 'Quando o oponente comprar uma carta por efeito de Magia, ele recebe 1000 de dano.' },
+
+  // ========== ARMADILHAS (Lote 3 - Novos!) ==========
+  { id: 't27', tipo: 'armadilha', nome: 'Barreira de Gelo', efeito: 'armadilha_pular_fase_batalha', descricao: 'Quando o oponente declarar o primeiro ataque do turno, encerre a Fase de Batalha dele imediatamente.' },
+  { id: 't28', tipo: 'armadilha', nome: 'Barreira de Gelo', efeito: 'armadilha_pular_fase_batalha', descricao: 'Quando o oponente declarar o primeiro ataque do turno, encerre a Fase de Batalha dele imediatamente.' },
+  { id: 't29', tipo: 'armadilha', nome: 'Pacto de Sobrevivência', efeito: 'armadilha_sobrevive_com_1_pv', descricao: 'Quando você for receber dano que zeraria sua vida, você fica com 1 de Vida e o turno do oponente acaba.' },
+  { id: 't30', tipo: 'armadilha', nome: 'Campo Minado', efeito: 'armadilha_destroi_atacante_e_aleatorio', descricao: 'Quando oponente atacar, destrua o monstro atacante e mais 1 monstro aleatório dele.' },
+  { id: 't31', tipo: 'armadilha', nome: 'Campo Minado', efeito: 'armadilha_destroi_atacante_e_aleatorio', descricao: 'Quando oponente atacar, destrua o monstro atacante e mais 1 monstro aleatório dele.' },
+  { id: 't32', tipo: 'armadilha', nome: 'Tributo Forçado', efeito: 'armadilha_sacrifica_1_destroi_2', descricao: 'Quando oponente invocar um monstro, destrua 1 monstro seu para destruir 2 monstros do oponente.' },
+  { id: 't33', tipo: 'armadilha', nome: 'Reverso do Destino', efeito: 'armadilha_reflete_dano_efeito', descricao: 'Quando você for receber dano de efeito (Magia/Armadilha/Monstro), o oponente recebe o dano no seu lugar.' },
+  { id: 't34', tipo: 'armadilha', nome: 'Prisão Espiritual', efeito: 'armadilha_remove_efeitos_zera_atk', descricao: 'Quando um monstro atacar, ele perde todos os efeitos e seu ATK se torna 0 permanentemente.' },
+  { id: 't35', tipo: 'armadilha', nome: 'Espelhos Gêmeos', efeito: 'armadilha_invoca_copia', descricao: 'Quando o oponente invocar um monstro, crie um "Token" do seu lado do campo com o mesmo ATK e DEF.' },
+  { id: 't36', tipo: 'armadilha', nome: 'Vingança Póstuma', efeito: 'armadilha_destroi_quem_destruiu', descricao: 'Quando um monstro seu for destruído em batalha, destrua o monstro que o atacou.' }
 ];

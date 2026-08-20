@@ -7,7 +7,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 30px;
+    gap: 25px;
     padding: 10px;
     height: 100vh;
     max-width: 1500px;
@@ -19,8 +19,8 @@ body {
     align-items: center;
     flex-shrink: 0;
 }
-.side-panel.left { width: 260px; align-items: flex-start; }
-.side-panel.right { width: 260px; align-items: stretch; }
+.side-panel.left { width: 280px; align-items: flex-start; }
+.side-panel.right { width: 280px; align-items: stretch; }
 .center-panel { flex: 1; display: flex; justify-content: center; align-items: center; height: 100%; width: 100%; min-width: 0; }
 
 /* Botão Sair (Inferior Esquerdo) */
@@ -32,25 +32,25 @@ body {
 
 /* Preview & Efeito (Esquerda) */
 .big-preview {
-    width: 240px; height: 330px; background: white; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
-    padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; color: #2c3e50; font-size: 1.1em; transition: all 0.3s;
+    width: 260px; height: 360px; background: white; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; color: #2c3e50; font-size: 1.2em; transition: all 0.3s;
 }
-.big-preview .card-name { font-size: 1.8em; margin-bottom: 10px; }
+.big-preview .card-name { font-size: 2em; margin-bottom: 10px; }
 .big-preview .card-type { font-size: 1.2em; color: #7f8c8d; margin-bottom: 10px; }
-.big-preview .card-stats { display: flex; gap: 20px; font-weight: bold; font-size: 1.1em; margin-top: 15px; }
+.big-preview .card-stats { display: flex; gap: 20px; font-weight: bold; font-size: 1.2em; margin-top: 15px; }
 .big-preview.hidden { display: none; }
 
 .card-effect-below {
-    width: 240px; background: rgba(0,0,0,0.7); color: white; border-radius: 6px; padding: 8px 12px;
-    font-size: 0.9em; text-align: center; font-style: italic; border: 1px solid #7f8c8d; min-height: 40px;
+    width: 260px; background: rgba(0,0,0,0.7); color: white; border-radius: 6px; padding: 12px 15px;
+    font-size: 1em; text-align: center; font-style: italic; border: 1px solid #7f8c8d; min-height: 50px;
 }
 .card-effect-below.hidden { display: none; }
 
 /* Logs e Placar (Direita) */
 .game-log {
     width: 100%; height: 200px; background: rgba(0,0,0,0.7); border-radius: 8px; padding: 10px;
-    overflow-y: auto; font-size: 0.85em; margin-bottom: 15px;
+    overflow-y: auto; font-size: 0.9em; margin-bottom: 15px;
 }
 .game-log div { margin-bottom: 2px; }
 .game-scoreboard {
@@ -58,59 +58,62 @@ body {
     justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
 .score-player { display: flex; flex-direction: column; align-items: center; font-weight: bold; gap: 5px; }
-.score-player span:first-child { font-size: 1em; color: #bdc3c7; }
-.score-number { font-size: 1.8em; color: #ecf0f1; }
-.score-vs { font-size: 1.3em; font-weight: bold; color: #e74c3c; }
+.score-player span:first-child { font-size: 1.1em; color: #bdc3c7; }
+.score-number { font-size: 2em; color: #ecf0f1; }
+.score-vs { font-size: 1.5em; font-weight: bold; color: #e74c3c; }
 
 /* Botões de Ação (Direita) */
 .actions-container { display: flex; gap: 15px; justify-content: center; margin-top: 15px; width: 100%; }
-.actions-container button { padding: 8px 25px; font-size: 0.9em; min-width: 120px; font-weight: bold; }
+.actions-container button { padding: 12px 25px; font-size: 1em; min-width: 120px; font-weight: bold; }
 
-/* Campo Central */
+/* Campo Central (Altura ajustada para não estourar) */
 #game-container {
-    width: 100%; max-width: 750px; background-color: #34495e; border-radius: 10px; padding: 10px 15px;
+    width: 100%; max-width: 1000px; background-color: #34495e; border-radius: 10px; padding: 10px 15px;
     box-shadow: 0 0 20px rgba(0,0,0,0.5); display: flex; flex-direction: column; justify-content: space-between;
-    height: 80vh; max-height: 750px;
+    height: 90vh; max-height: 700px;
 }
 .player-area { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-.info-box { background-color: #1abc9c; padding: 4px 8px; border-radius: 5px; font-weight: bold; color: #2c3e50; font-size: 0.85em; }
+.info-box { background-color: #1abc9c; padding: 4px 10px; border-radius: 5px; font-weight: bold; color: #2c3e50; font-size: 0.9em; }
 .hp { background-color: #e74c3c; color: white; cursor: default; }
 .hp.highlight-target { outline: 3px solid #f1c40f; cursor: pointer; }
 
-.board { display: flex; flex-direction: column; gap: 4px; margin: 4px 0; flex-shrink: 0; }
+.board { display: flex; flex-direction: column; gap: 5px; margin: 4px 0; flex-shrink: 0; }
 .row { display: flex; justify-content: space-around; }
 .zone { display: flex; flex-direction: column; align-items: center; }
-.zone-label { font-size: 0.6em; text-transform: uppercase; margin-bottom: 2px; color: #bdc3c7; }
+.zone-label { font-size: 0.7em; text-transform: uppercase; margin-bottom: 2px; color: #bdc3c7; }
 .slots { display: flex; gap: 6px; }
 
+/* Slots e Cartas (Reduzidos para caber perfeitamente em 100% de zoom) */
 .slot {
-    width: 65px; height: 90px; background-color: rgba(255,255,255,0.1); border: 2px dashed #7f8c8d; border-radius: 6px;
-    display: flex; align-items: center; justify-content: center; font-size: 0.5em; color: #95a5a6; position: relative; transition: all 0.2s;
+    width: 75px; height: 105px; background-color: rgba(255,255,255,0.1); border: 2px dashed #7f8c8d; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-size: 0.6em; color: #95a5a6; position: relative; transition: all 0.2s;
 }
 .slot.highlight { border-color: #f1c40f; background-color: rgba(241, 196, 15, 0.2); cursor: pointer; }
 .slot .card {
     width: 100%; height: 100%; background-color: white; border-radius: 4px; color: #2c3e50; display: flex;
-    flex-direction: column; align-items: center; justify-content: center; padding: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    flex-direction: column; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     font-size: 0.6em; text-align: center; position: relative; transition: transform 0.2s;
 }
-.slot .card.defense { transform: rotate(90deg) scale(0.75); transform-origin: center; }
+.slot .card.defense { transform: rotate(90deg) scale(0.7); transform-origin: center; }
 .slot .card.facedown { background-color: #2c3e50; color: white; border: 1px solid #ecf0f1; }
 .slot .card.facedown-own { background-color: #34495e; color: #ecf0f1; border: 2px solid #f1c40f; }
-.card-name { font-weight: bold; font-size: 0.75em; }
+.card-name { font-weight: bold; font-size: 0.9em; }
 .card-stats { display: flex; justify-content: space-between; width: 100%; margin-top: 3px; }
-.card-stats span { font-size: 0.7em; }
-.card-position { position: absolute; bottom: 2px; right: 2px; font-size: 0.5em; background-color: rgba(0,0,0,0.6); color: white; padding: 1px 2px; border-radius: 3px; }
+.card-stats span { font-size: 0.8em; }
+.card-position { position: absolute; bottom: 2px; right: 2px; font-size: 0.5em; background-color: rgba(0,0,0,0.6); color: white; padding: 1px 3px; border-radius: 3px; }
 
 #hand-container { margin-top: 4px; flex-shrink: 0; }
-.hand-title { margin-bottom: 2px; font-weight: bold; font-size: 0.8em; }
-#hand { display: flex; gap: 4px; min-height: 65px; background-color: rgba(0,0,0,0.2); padding: 4px; border-radius: 6px; flex-wrap: wrap; justify-content: center; }
+.hand-title { margin-bottom: 2px; font-weight: bold; font-size: 0.9em; }
+#hand { display: flex; gap: 4px; min-height: 70px; background-color: rgba(0,0,0,0.2); padding: 4px; border-radius: 6px; flex-wrap: wrap; justify-content: center; }
+
+/* Mão do Jogador (Ajustada) */
 .hand-card {
-    width: 55px; height: 65px; background-color: white; border-radius: 4px; color: #2c3e50; display: flex;
-    flex-direction: column; align-items: center; justify-content: center; padding: 3px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    width: 65px; height: 85px; background-color: white; border-radius: 4px; color: #2c3e50; display: flex;
+    flex-direction: column; align-items: center; justify-content: center; padding: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     cursor: pointer; transition: transform 0.2s; font-size: 0.5em; text-align: center;
 }
 .hand-card:hover { transform: translateY(-5px); }
-.hand-card.selected { border: 2px solid #f1c40f; }
+.hand-card.selected { border: 3px solid #f1c40f; }
 
 /* Modais Finais (Vitórias) */
 .modal-endgame .modal-content h2 { font-size: 2em; margin-bottom: 10px; }
