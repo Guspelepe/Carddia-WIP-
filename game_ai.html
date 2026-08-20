@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carddia - Batalha</title>
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/game.css">
+</head>
+<body>
+    <div class="game-layout">
+        
+        <!-- Botão Sair -->
+        <button class="btn-sair" onclick="sairDaPartida()">❌ Sair</button>
+
+        <!-- PAINEL ESQUERDO: Preview da Carta + Efeito abaixo -->
+        <div class="side-panel left">
+            <div id="card-preview" class="big-preview hidden"></div>
+            <div id="card-effect-display" class="card-effect-below hidden"></div>
+        </div>
+
+        <!-- PAINEL CENTRAL: Campo de Batalha -->
+        <div class="center-panel">
+            <div id="game-container">
+                <div id="series-info" style="text-align: center; margin-bottom: 6px; font-weight: bold;"></div>
+
+                <div class="player-area" id="player2-area">
+                    <div class="player-info">
+                        <span class="info-box hp" id="hp-p2">4000</span>
+                        <span class="info-box" id="deck-p2">20</span>
+                    </div>
+                    <div>Computador</div>
+                </div>
+
+                <div class="board">
+                    <div class="row">
+                        <div class="zone">
+                            <div class="zone-label">Magias/Armadilhas do Computador</div>
+                            <div class="slots" id="magia-slots-p2"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="zone">
+                            <div class="zone-label">Monstros do Computador</div>
+                            <div class="slots" id="monstro-slots-p2"></div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 2px solid #7f8c8d; margin: 4px 0;"></div>
+
+                    <div class="row">
+                        <div class="zone">
+                            <div class="zone-label">Monstros do Jogador</div>
+                            <div class="slots" id="monstro-slots-p1"></div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="zone">
+                            <div class="zone-label">Magias/Armadilhas do Jogador</div>
+                            <div class="slots" id="magia-slots-p1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="player-area" id="player1-area">
+                    <div class="player-info">
+                        <span class="info-box hp" id="hp-p1">4000</span>
+                        <span class="info-box" id="deck-p1">20</span>
+                    </div>
+                    <div id="player-nick-display">Você</div>
+                </div>
+
+                <div id="hand-container">
+                    <div class="hand-title">Sua Mão</div>
+                    <div id="hand"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAINEL DIREITO: Logs, Placar e Botões -->
+        <div class="side-panel right">
+            <div id="log" class="game-log"></div>
+            
+            <div id="scoreboard" class="game-scoreboard">
+                <div class="score-player">
+                    <span>Computador</span>
+                    <span id="score-p2" class="score-number">0</span>
+                </div>
+                <div class="score-vs">X</div>
+                <div class="score-player">
+                    <span id="score-player-name">Você</span>
+                    <span id="score-p1" class="score-number">0</span>
+                </div>
+            </div>
+
+            <div class="actions-container">
+                <button id="btn-atacar" disabled>Atacar</button>
+                <button id="btn-encerrar" disabled>Encerrar Turno</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE POSIÇÃO -->
+    <div id="modal-position" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Escolha a posição para invocar</h3>
+            <div class="modal-options">
+                <button id="btn-ataque" class="modal-option">Ataque</button>
+                <button id="btn-defesa" class="modal-option">Defesa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VITÓRIA DA RODADA (Some sozinho) -->
+    <div id="modal-round-winner" class="modal-overlay hidden modal-round">
+        <div class="modal-content">
+            <h2 id="round-winner-text">Rodada Vencida!</h2>
+        </div>
+    </div>
+
+    <!-- MODAL DE VITÓRIA DO CAMPEONATO (Com botão "Jogar Novamente") -->
+    <div id="modal-endgame" class="modal-overlay hidden modal-endgame">
+        <div class="modal-content">
+            <h2>🏆 Campeonato Encerrado!</h2>
+            <div class="winner-name" id="endgame-winner-text">Guspelepe</div>
+            <button onclick="iniciarCampeonato()">Jogar Novamente</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/cards.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/ai.js"></script>
+</body>
+</html>

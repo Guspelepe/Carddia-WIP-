@@ -19,7 +19,7 @@ async function aiTurn(estado) {
     }
   }
 
-  // 2. Usar magias (heurísticas conforme dificuldade)
+  // 2. Usar magias
   const magiasDestruir = jogador.mao
     .map((carta, index) => ({ carta, index }))
     .filter(item => item.carta.tipo === 'magia' && item.carta.efeito === 'destruir_inimigo');

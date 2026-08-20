@@ -1,5 +1,9 @@
-let nivelDificuldade = 'medio';
+// ==================== LER PARÂMETROS DA URL ====================
+const urlParams = new URLSearchParams(window.location.search);
+let nivelDificuldade = urlParams.get('diff') || 'medio';
+const nomeJogadorParam = urlParams.get('nick') || 'Você';
 
+// ==================== ESTADO GLOBAL ====================
 const estado = {
   fase: 'inicio',
   turno: 1,
@@ -9,6 +13,7 @@ const estado = {
     vitoriasJ1: 0,
     vitoriasJ2: 0,
     rodadaAtual: 1,
+    melhorDe: parseInt(urlParams.get('bestof')) || 3,
     historico: []
   },
   jogadores: {
@@ -23,6 +28,11 @@ const estado = {
   processandoAnimacao: false,
   log: []
 };
+
+// Função auxiliar para nomes dos jogadores
+function nomeJogador(id) {
+    return id === 1 ? nomeJogadorParam : 'Computador';
+}
 
 function criarJogadorInicial(id) {
   return {
@@ -141,7 +151,10 @@ function montarDeck(jogadorId, deckCompleto, nivel) {
 
 // ==================== INICIALIZAÇÃO ====================
 function iniciarCampeonato() {
-  nivelDificuldade = document.getElementById('dificuldade').value;
+  // Esconder modais finais
+  document.getElementById('modal-endgame').classList.add('hidden');
+  document.getElementById('modal-round-winner').classList.add('hidden');
+  
   estado.campeonato.vitoriasJ1 = 0;
   estado.campeonato.vitoriasJ2 = 0;
   estado.campeonato.rodadaAtual = 1;
@@ -169,9 +182,12 @@ function iniciarNovoDuelo() {
   estado.acaoPendente = null;
   estado.atacanteSelecionado = null;
   estado.processandoAnimacao = false;
+  // Resetar o preview (a primeira carta vazia)
+  document.getElementById('card-preview').classList.add('hidden');
+  document.getElementById('card-effect-display').classList.add('hidden');
 
   render();
-  adicionarLog(`--- Novo duelo iniciado! Sorteio: Jogador ${estado.jogadorAtual} começa. ---`);
+  adicionarLog(`--- Novo duelo iniciado! Sorteio: ${nomeJogador(estado.jogadorAtual)} começa. ---`);
   if (estado.jogadorAtual === 1) {
     adicionarLog('Você não pode atacar no primeiro turno.');
   } else {
@@ -182,6 +198,14 @@ function iniciarNovoDuelo() {
 // ==================== TROCA DE TURNOS ====================
 function encerrarTurno() {
   if (estado.fase === 'fim') return;
+
+  if (estado.fase === 'batalha') {
+    estado.fase = 'main';
+    estado.hasAttacked = true;
+    estado.atacanteSelecionado = null;
+    limparDestaques();
+    adicionarLog('Fase de batalha encerrada.');
+  }
 
   estado.jogadores[1].zonaMonstros.forEach(m => {
     if (m) {
@@ -218,7 +242,7 @@ function encerrarTurno() {
   if (!comprarCarta(estado.jogadorAtual, 5 - jogador.mao.length)) return;
 
   render();
-  adicionarLog(`--- Turno ${estado.turno} - Jogador ${estado.jogadorAtual} ---`);
+  adicionarLog(`--- Turno ${estado.turno} - ${nomeJogador(estado.jogadorAtual)} ---`);
 
   if (estado.jogadorAtual === 2) setTimeout(() => aiTurn(estado), 1200);
 }
@@ -282,7 +306,6 @@ function selecionarCartaDaMao(index) {
         return;
       }
       estado.acaoPendente = { tipo: 'reviver' };
-      // Implementação simplificada: revive o mais forte automaticamente
       const maisForte = jogador.cemiterio.reduce((a, b) => (b.atk > a.atk ? b : a));
       usarMagia(1, index, { tipo: 'cemiterio', index: jogador.cemiterio.indexOf(maisForte) });
     } else if (carta.efeito === 'roubar_monstro') {
@@ -303,7 +326,7 @@ function selecionarCartaDaMao(index) {
   }
 }
 
-// ==================== MODAL ====================
+// ==================== MODAL DE POSIÇÃO ====================
 function mostrarModalPosicao() { document.getElementById('modal-position').classList.remove('hidden'); }
 function esconderModalPosicao() { document.getElementById('modal-position').classList.add('hidden'); }
 
@@ -324,7 +347,7 @@ document.getElementById('btn-defesa').addEventListener('click', () => {
   }
 });
 
-// ==================== INVOAR MONSTRO ====================
+// ==================== INVOCAR MONSTRO ====================
 function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
   const jogador = estado.jogadores[jogadorId];
   const carta = jogador.mao[maoIndex];
@@ -344,7 +367,7 @@ function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao) {
     posicaoMudouEsteTurno: false
   };
   jogador.zonaMonstros[slotIndex] = monstro;
-  adicionarLog(`Jogador ${jogadorId} invocou ${carta.nome} na posição ${posicao}.`);
+  adicionarLog(`${nomeJogador(jogadorId)} invocou ${carta.nome} na posição ${posicao}.`);
   verificarArmadilhaInvocacao(jogadorId, slotIndex);
   aplicarEfeitoInvocacao(jogadorId, slotIndex);
 
@@ -420,7 +443,7 @@ function baixarArmadilha(jogadorId, maoIndex, slotIndex) {
   if (slotIndex < 0 || slotIndex > 2 || jogador.zonaMagias[slotIndex] !== null) return false;
   jogador.mao.splice(maoIndex, 1);
   jogador.zonaMagias[slotIndex] = { ...carta, viradaParaBaixo: true };
-  adicionarLog(`Jogador ${jogadorId} baixou uma armadilha.`);
+  adicionarLog(`${nomeJogador(jogadorId)} baixou uma armadilha.`);
   if (jogadorId === 1) {
     estado.cartaSelecionada = null;
     estado.acaoPendente = null;
@@ -459,7 +482,7 @@ function usarMagia(jogadorId, maoIndex, alvo) {
       setTimeout(() => handCard.remove(), 800);
     }
   } else {
-    adicionarLog(`Jogador 2 ativou ${carta.nome}.`);
+    adicionarLog(`${nomeJogador(jogadorId)} ativou ${carta.nome}.`);
   }
 
   jogador.mao.splice(maoIndex, 1);
@@ -545,7 +568,7 @@ function usarMagia(jogadorId, maoIndex, alvo) {
       break;
     case 'curar_2000':
       jogador.hp += 2000;
-      adicionarLog(`${jogadorId === 1 ? 'Jogador 1' : 'Jogador 2'} curou 2000 de vida.`);
+      adicionarLog(`${nomeJogador(jogadorId)} curou 2000 de vida.`);
       break;
     case 'destruir_magias_armadilhas':
       for (let i = 0; i < oponente.zonaMagias.length; i++) {
@@ -560,7 +583,7 @@ function usarMagia(jogadorId, maoIndex, alvo) {
     case 'comprar_3_dano_1000':
       comprarCarta(jogadorId, 3);
       jogador.hp -= 1000;
-      adicionarLog(`${jogadorId === 1 ? 'Jogador 1' : 'Jogador 2'} perdeu 1000 de vida.`);
+      adicionarLog(`${nomeJogador(jogadorId)} perdeu 1000 de vida.`);
       verificarFimDeDuelo();
       break;
     default: break;
@@ -630,7 +653,7 @@ function aplicarEfeitoMorte(monstro, jogadorId) {
   if (monstro.efeito === 'quando_morre_ganha_500_vida') {
     const jogador = estado.jogadores[jogadorId];
     jogador.hp += 500;
-    adicionarLog(`${jogadorId === 1 ? 'Jogador 1' : 'Jogador 2'} ganhou 500 de vida (${monstro.nome}).`);
+    adicionarLog(`${nomeJogador(jogadorId)} ganhou 500 de vida (${monstro.nome}).`);
   }
 }
 
@@ -773,7 +796,7 @@ async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
         adicionarLog(`Armadilha "Cilindro Mágico" ativada!`);
         await delay(800);
         estado.jogadores[1].hp -= atacante.atk;
-        adicionarLog(`${atacante.nome} teve seu ataque refletido! Jogador 1 perdeu ${atacante.atk} HP.`);
+        adicionarLog(`${atacante.nome} teve seu ataque refletido! ${nomeJogador(1)} perdeu ${atacante.atk} HP.`);
         atacante.ataquesRestantes--;
         defensor.zonaMagias[i] = null;
         if (verificarFimDeDuelo()) return;
@@ -792,7 +815,7 @@ async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
 
   if (alvoTipo === 'jogador') {
     defensor.hp -= atacante.atk;
-    adicionarLog(`${atacante.nome} atacou diretamente! Jogador 2 perdeu ${atacante.atk} HP.`);
+    adicionarLog(`${atacante.nome} atacou diretamente! Computador perdeu ${atacante.atk} HP.`);
     atacante.ataquesRestantes--;
     if (verificarFimDeDuelo()) return;
   } else {
@@ -813,9 +836,9 @@ function verificarFimBatalha() {
   const aindaPodeAtacar = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && m.ataquesRestantes > 0 && m.efeito !== 'nao_pode_atacar');
   if (aindaPodeAtacar) {
     destacarAtacantesDisponiveis(1);
-    adicionarLog('Selecione outro monstro atacante ou encerre a batalha.');
+    adicionarLog('Selecione outro monstro atacante ou encerre o turno.');
   } else {
-    adicionarLog('Todos os monstros atacaram. Encerre a batalha ou o turno.');
+    adicionarLog('Todos os monstros atacaram. Encerre o turno.');
     renderBotoes();
   }
 }
@@ -833,7 +856,7 @@ function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slo
     if (dif > 0) {
       destruirMonstro(jogadorDefensorId, slotDefensor, 'batalha');
       estado.jogadores[jogadorDefensorId].hp -= dif;
-      adicionarLog(`${defensor.nome} destruído! Jogador ${jogadorDefensorId} perdeu ${dif} HP.`);
+      adicionarLog(`${defensor.nome} destruído! Computador perdeu ${dif} HP.`);
       if (atacante.efeito === 'ganha_500_atk_ao_destruir_inimigo') {
         atacante.bonusAtk = (atacante.bonusAtk || 0) + 500;
         adicionarLog(`${atacante.nome} ganhou +500 de ATK.`);
@@ -851,7 +874,7 @@ function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slo
     } else {
       destruirMonstro(jogadorAtacanteId, slotAtacante, 'batalha');
       estado.jogadores[jogadorAtacanteId].hp -= (-dif);
-      adicionarLog(`${atacante.nome} destruído! Jogador ${jogadorAtacanteId} perdeu ${-dif} HP.`);
+      adicionarLog(`${atacante.nome} destruído! ${nomeJogador(jogadorAtacanteId)} perdeu ${-dif} HP.`);
       verificarFimDeDuelo();
     }
   } else {
@@ -861,12 +884,12 @@ function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slo
       adicionarLog(`${defensor.nome} destruído em defesa.`);
       if (atacante.efeito === 'dano_perfurante' || atacante.efeito === 'ignora_defesa_ataque_direto') {
         estado.jogadores[jogadorDefensorId].hp -= dif;
-        adicionarLog(`Dano perfurante! Jogador ${jogadorDefensorId} perdeu ${dif} HP.`);
+        adicionarLog(`Dano perfurante! Computador perdeu ${dif} HP.`);
       }
       verificarFimDeDuelo();
     } else if (dif < 0) {
       estado.jogadores[jogadorAtacanteId].hp -= (-dif);
-      adicionarLog(`${atacante.nome} não destruiu ${defensor.nome}. Jogador ${jogadorAtacanteId} perdeu ${-dif} HP.`);
+      adicionarLog(`${atacante.nome} não destruiu ${defensor.nome}. ${nomeJogador(jogadorAtacanteId)} perdeu ${-dif} HP.`);
       verificarFimDeDuelo();
     }
   }
@@ -917,7 +940,7 @@ async function executarAtaquesAutomaticos(jogadorId) {
           adicionarLog(`Armadilha "Cilindro Mágico" ativada!`);
           await delay(800);
           jogador.hp -= monstro.atk;
-          adicionarLog(`${monstro.nome} teve seu ataque refletido! Jogador ${jogadorId} perdeu ${monstro.atk} HP.`);
+          adicionarLog(`${monstro.nome} teve seu ataque refletido! ${nomeJogador(jogadorId)} perdeu ${monstro.atk} HP.`);
           monstro.ataquesRestantes--;
           inimigo.zonaMagias[j] = null;
           if (verificarFimDeDuelo()) return;
@@ -930,7 +953,7 @@ async function executarAtaquesAutomaticos(jogadorId) {
     const monstrosInimigos = inimigo.zonaMonstros.filter(m => m !== null);
     if (monstrosInimigos.length === 0) {
       inimigo.hp -= monstro.atk;
-      adicionarLog(`${monstro.nome} atacou diretamente! Jogador ${inimigoId} perdeu ${monstro.atk} HP.`);
+      adicionarLog(`${monstro.nome} atacou diretamente! Computador perdeu ${monstro.atk} HP.`);
       monstro.ataquesRestantes--;
       if (verificarFimDeDuelo()) return;
       render();
@@ -997,27 +1020,52 @@ function animarAtaque(atacanteSlot, defensorSlot, jogadorAtacanteId, jogadorDefe
   });
 }
 
-// ==================== FINALIZAÇÃO ====================
+// ==================== FINALIZAÇÃO E VITÓRIAS ====================
+// Função para mostrar a vitória da rodada (modal que some sozinho)
+function exibirVitoriaRodada(vencedorId) {
+    const modal = document.getElementById('modal-round-winner');
+    const text = document.getElementById('round-winner-text');
+    text.textContent = `${nomeJogador(vencedorId)} venceu a rodada!`;
+    modal.classList.remove('hidden');
+
+    // Some após 1.5 segundos e inicia a próxima
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        estado.campeonato.rodadaAtual++;
+        adicionarLog('--- Iniciando próximo duelo ---');
+        iniciarNovoDuelo(); // Agora chama sempre, sem o if que travava
+    }, 1500);
+}
+
+// Função para mostrar a vitória da partida (modal fixo com botão jogar novamente)
+function exibirVitoriaCampeonato(vencedorId) {
+    const modal = document.getElementById('modal-endgame');
+    const text = document.getElementById('endgame-winner-text');
+    text.textContent = `🏆 ${nomeJogador(vencedorId)} é o grande campeão! 🏆`;
+    modal.classList.remove('hidden');
+}
+
 function finalizarDuelo(vencedorId, motivo) {
   if (estado.fase === 'fim') return;
   estado.fase = 'fim';
-  adicionarLog(`🏆 Jogador ${vencedorId} venceu o duelo! Motivo: ${motivo}`);
+  adicionarLog(`🏆 ${nomeJogador(vencedorId)} venceu o duelo! Motivo: ${motivo}`);
   if (vencedorId === 1) estado.campeonato.vitoriasJ1++;
   else estado.campeonato.vitoriasJ2++;
   estado.campeonato.historico.push({ rodada: estado.campeonato.rodadaAtual, vencedor: vencedorId, motivo });
   renderPlacar();
 
-  if (estado.campeonato.vitoriasJ1 >= 2 || estado.campeonato.vitoriasJ2 >= 2) {
-    adicionarLog('🏆 Campeonato encerrado! Vencedor: ' + (estado.campeonato.vitoriasJ1 >= 2 ? 'Jogador 1' : 'Jogador 2'));
-    estado.fase = 'fim';
+  const vitoriasNecessarias = Math.ceil(estado.campeonato.melhorDe / 2);
+  
+  // Verifica se já terminou o campeonato
+  if (estado.campeonato.vitoriasJ1 >= vitoriasNecessarias || estado.campeonato.vitoriasJ2 >= vitoriasNecessarias) {
+    adicionarLog(`🏆 Campeonato encerrado! Vencedor: ${nomeJogador(estado.campeonato.vitoriasJ1 >= vitoriasNecessarias ? 1 : 2)}`);
     render();
+    exibirVitoriaCampeonato(estado.campeonato.vitoriasJ1 >= vitoriasNecessarias ? 1 : 2);
     return;
   }
-  estado.campeonato.rodadaAtual++;
-  setTimeout(() => {
-    adicionarLog('--- Iniciando próximo duelo ---');
-    iniciarNovoDuelo();
-  }, 2000);
+  
+  // Se não terminou, mostra o efeito de vitória da rodada
+  exibirVitoriaRodada(vencedorId);
 }
 
 // ==================== RENDERIZAÇÃO ====================
@@ -1041,6 +1089,10 @@ function renderInfoJogadores() {
 function renderPlacar() {
   document.getElementById('score-p1').textContent = estado.campeonato.vitoriasJ1;
   document.getElementById('score-p2').textContent = estado.campeonato.vitoriasJ2;
+  document.getElementById('series-info').textContent = 
+    `Melhor de ${estado.campeonato.melhorDe}: ${nomeJogadorParam} ${estado.campeonato.vitoriasJ1} x ${estado.campeonato.vitoriasJ2} Computador`;
+  document.getElementById('score-player-name').textContent = nomeJogadorParam;
+  document.getElementById('player-nick-display').textContent = nomeJogadorParam;
 }
 
 function renderZonas() {
@@ -1068,8 +1120,8 @@ function renderZonas() {
           <div class="card-stats"><span>ATK ${atkTotal}</span><span>DEF ${defTotal}</span></div>
           <div class="card-position">${monstro.posicao === 'ataque' ? 'ATQ' : 'DEF'}</div>
         `;
+        // AO PASSAR O MOUSE: chamar showPreview. AO SAIR: não chamar nada para fixar a carta!
         cardDiv.addEventListener('mouseenter', () => showPreview(monstro, i));
-        cardDiv.addEventListener('mouseleave', hidePreview);
         slot.appendChild(cardDiv);
       }
       slot.addEventListener('click', () => handleSlotClick(i, 'monstro', j));
@@ -1094,7 +1146,6 @@ function renderZonas() {
           cardDiv.innerHTML = `<div class="card-name">${carta.nome}</div><div>${carta.tipo}</div>`;
         }
         cardDiv.addEventListener('mouseenter', () => showPreview(carta, i));
-        cardDiv.addEventListener('mouseleave', hidePreview);
         slot.appendChild(cardDiv);
       }
       slot.addEventListener('click', () => handleSlotClick(i, 'magia', j));
@@ -1118,7 +1169,6 @@ function renderMao() {
       else info += `<div>${carta.descricao || 'Armadilha'}</div>`;
       cardDiv.innerHTML = info;
       cardDiv.addEventListener('mouseenter', () => showPreview(carta, 1));
-      cardDiv.addEventListener('mouseleave', hidePreview);
       cardDiv.addEventListener('click', () => selecionarCartaDaMao(index));
       handDiv.appendChild(cardDiv);
     });
@@ -1136,20 +1186,16 @@ function renderMao() {
 
 function renderBotoes() {
   const btnAtacar = document.getElementById('btn-atacar');
-  const btnEncerrarBatalha = document.getElementById('btn-encerrar-batalha');
   const btnEncerrar = document.getElementById('btn-encerrar');
   if (estado.fase === 'main' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
     btnAtacar.disabled = !(estado.turno !== 1 && !estado.hasAttacked && !estado.primeiroTurno);
     btnEncerrar.disabled = false;
-    btnEncerrarBatalha.style.display = 'none';
   } else if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
     btnAtacar.disabled = true;
-    btnEncerrar.disabled = true;
-    btnEncerrarBatalha.style.display = 'inline-block';
+    btnEncerrar.disabled = false; // Pode encerrar o turno a qualquer momento
   } else {
     btnAtacar.disabled = true;
     btnEncerrar.disabled = true;
-    btnEncerrarBatalha.style.display = 'none';
   }
 }
 
@@ -1161,40 +1207,51 @@ function renderLog() {
 
 function showPreview(carta, jogadorId) {
   const preview = document.getElementById('card-preview');
+  const effectDisplay = document.getElementById('card-effect-display');
+  
   preview.innerHTML = '';
+  preview.classList.remove('hidden');
+  
   if (carta.viradaParaBaixo && jogadorId === 2) {
     const nome = document.createElement('div');
     nome.className = 'card-name';
     nome.textContent = 'Carta virada';
     preview.appendChild(nome);
-    preview.classList.remove('hidden');
+    effectDisplay.classList.add('hidden');
     return;
   }
+  
   const nome = document.createElement('div');
   nome.className = 'card-name';
   nome.textContent = carta.nome;
   preview.appendChild(nome);
+  
   const tipo = document.createElement('div');
   tipo.className = 'card-type';
   tipo.textContent = carta.tipo.charAt(0).toUpperCase() + carta.tipo.slice(1);
   preview.appendChild(tipo);
+  
   if (carta.tipo === 'monstro') {
     const stats = document.createElement('div');
     stats.className = 'card-stats';
     stats.innerHTML = `<span>ATK ${carta.atk + (carta.bonusAtk || 0)}</span><span>DEF ${carta.def + (carta.bonusDef || 0)}</span>`;
     preview.appendChild(stats);
   }
-  if (carta.descricao || carta.efeito) {
-    const efeito = document.createElement('div');
-    efeito.className = 'card-effect';
-    efeito.textContent = carta.descricao || (carta.efeito ? `Efeito: ${carta.efeito}` : 'Sem efeito');
-    preview.appendChild(efeito);
+
+  let efeitoTexto = '';
+  if (carta.descricao) { efeitoTexto = carta.descricao; } 
+  else if (carta.efeito) { efeitoTexto = `Efeito: ${carta.efeito}`; }
+
+  if (efeitoTexto) {
+    effectDisplay.textContent = efeitoTexto;
+    effectDisplay.classList.remove('hidden');
+  } else {
+    effectDisplay.classList.add('hidden');
   }
-  preview.classList.remove('hidden');
 }
 
 function hidePreview() {
-  // Intencionalmente vazia para manter a última carta visualizada
+    // Função vazia intencionalmente para que o preview nunca suma enquanto não passar o mouse em outra carta
 }
 
 // ==================== DESTAQUES ====================
@@ -1269,7 +1326,6 @@ function handleSlotClick(jogadorId, zona, slotIndex) {
   const jogador = estado.jogadores[1];
   const acao = estado.acaoPendente;
 
-  // Alternar posição se não houver ação pendente
   if (!acao && jogadorId === 1 && zona === 'monstro') {
     alternarPosicaoMonstro(1, slotIndex);
     return;
@@ -1294,21 +1350,27 @@ function handleSlotClick(jogadorId, zona, slotIndex) {
   }
 }
 
-// Evento para ataque direto
+// Ação de sair da partida
+function sairDaPartida() {
+    if (confirm("Você tem certeza que deseja sair?")) {
+        window.location.href = 'index.html';
+    }
+}
+
 document.getElementById('hp-p2').addEventListener('click', () => {
   if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && estado.atacanteSelecionado !== null && !estado.processandoAnimacao) {
     executarAtaque(estado.atacanteSelecionado, 'jogador', null);
   }
 });
 
-// Botões
 document.getElementById('btn-atacar').addEventListener('click', iniciarBatalha);
-document.getElementById('btn-encerrar-batalha').addEventListener('click', encerrarBatalha);
 document.getElementById('btn-encerrar').addEventListener('click', () => {
   if (estado.jogadorAtual === 1 && (estado.fase === 'main' || estado.fase === 'batalha') && !estado.processandoAnimacao) {
     encerrarTurno();
   }
 });
-document.getElementById('btn-iniciar').addEventListener('click', iniciarCampeonato);
 
-// Iniciar o jogo não automaticamente; aguardar clique em "Iniciar Jogo"
+// Inicializar o campeonato automaticamente quando a página carregar
+window.onload = () => {
+    iniciarCampeonato();
+};
