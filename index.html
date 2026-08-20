@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carddia - Menu</title>
+    <title>Carddia</title>
     <link rel="stylesheet" href="css/menu.css">
     <link rel="stylesheet" href="css/base.css">
     <style>
@@ -89,13 +89,13 @@
         <img src="img/logo.png" alt="Carddia" class="menu-logo">
         
         <div class="menu-input-group">
-            <label for="nickname">Seu Nickname:</label>
-            <input type="text" id="nickname" placeholder="Digite seu nome..." value="Jogador 1">
+            <label for="nickname">Nickname:</label>
+            <input type="text" id="nickname" placeholder="Digite seu nome">
         </div>
 
         <div class="menu-buttons">
-            <button class="menu-btn btn-online" onclick="alert('🚧 Em breve! Estamos trabalhando no modo Online.')">Jogar Online</button>
-            <button class="menu-btn btn-bot" onclick="abrirModalBot()">Jogar Contra Bot</button>
+            <button class="menu-btn btn-online" onclick="alert('Em breve!')">Jogar Online</button>
+            <button class="menu-btn btn-bot" onclick="abrirModalBot()">Contra Bot</button>
         </div>
     </div>
 
@@ -112,11 +112,11 @@
                 </select>
             </div>
             <div class="modal-field">
-                <label for="modal-melhor">Melhor de:</label>
+                <label for="modal-melhor">Número de rodadas: </label>
                 <select id="modal-melhor">
-                    <option value="1">1 Vitória</option>
-                    <option value="3" selected>3 Vitórias</option>
-                    <option value="5">5 Vitórias</option>
+                    <option value="1">1 Rodada</option>
+                    <option value="3" selected>3 Rodadas</option>
+                    <option value="5">5 Rodadas</option>
                 </select>
             </div>
             <button id="btn-iniciar-partida" onclick="iniciarJogo()">Iniciar Partida</button>
