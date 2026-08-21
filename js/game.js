@@ -22,13 +22,9 @@ function comprarCarta(jogadorId, quantidade = 1) {
   if (jogador.devePularCompra) { adicionarLog(`${nomeJogador(jogadorId)} teve sua compra pulada por um efeito!`); jogador.devePularCompra = false; return false; }
   for (let i = 0; i < quantidade; i++) {
     if (jogador.deck.length === 0) { finalizarDuelo(jogadorId === 1 ? 2 : 1, 'Deck vazio'); return false; }
-    let carta;
-    // AQUI ESTÁ A MUDANÇA CRÍTICA: Removi o "estado.fase !== 'inicio'" para ela já roubar na mão inicial!
-    if (jogadorId === 2 && nivelDificuldade === 'dificil' && window.aiEscolherCarta) {
-      carta = window.aiEscolherCarta(jogadorId); 
-      const idx = jogador.deck.indexOf(carta); if (idx !== -1) jogador.deck.splice(idx, 1); else carta = jogador.deck.shift();
-    } else { carta = jogador.deck.shift(); }
+    let carta = jogador.deck.shift(); // SEMPRE tira a primeira carta
     if (jogador.mao.length < 5) jogador.mao.push(carta);
+    // Verificar armadilha Falso Tesouro (se o oponente tiver)
     for (let i = 0; i < estado.jogadores[jogadorId === 1 ? 2 : 1].zonaMagias.length; i++) {
         const t = estado.jogadores[jogadorId === 1 ? 2 : 1].zonaMagias[i];
         if (t && t.tipo === 'armadilha' && t.efeito === 'armadilha_dano_comprar' && quantidade > 1) {
@@ -42,11 +38,37 @@ function comprarCarta(jogadorId, quantidade = 1) {
 function adicionarLog(mensagem) { estado.log.push(mensagem); renderLog(); }
 function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
-// ==================== MONTAGEM DE DECK DO JOGADOR ====================
+// ==================== MONTAGEM DE DECK ====================
 function montarDeck(jogadorId, deckCompleto, nivel) {
-  if (jogadorId === 2) return window.aiMontarDeck ? window.aiMontarDeck(jogadorId, deckCompleto, nivel) : deckCompleto.slice(0, 20);
-  let deck = []; const monstrosFortes = deckCompleto.filter(c => c.tipo === 'monstro' && c.atk > 2000); const monstrosFracos = deckCompleto.filter(c => c.tipo === 'monstro' && c.atk <= 2000); const magias = deckCompleto.filter(c => c.tipo === 'magia'); const armadilhas = deckCompleto.filter(c => c.tipo === 'armadilha');
-  const numMagiasArmadilhas = 5 + Math.floor(Math.random() * 6); const magiasEscolhidas = embaralhar([...magias]).slice(0, Math.ceil(numMagiasArmadilhas / 2)); const armadilhasEscolhidas = embaralhar([...armadilhas]).slice(0, Math.floor(numMagiasArmadilhas / 2)); const magiaArmadilha = [...magiasEscolhidas, ...armadilhasEscolhidas]; const monstros = embaralhar([...monstrosFortes, ...monstrosFracos]); deck = [...magiaArmadilha, ...monstros.slice(0, 20 - magiaArmadilha.length)];
+  // IA usa a função específica (em ai.js)
+  if (jogadorId === 2) {
+    return window.aiMontarDeck ? window.aiMontarDeck(jogadorId, deckCompleto, nivel) : deckCompleto.slice(0, 20);
+  }
+
+  // ----- DECK DO JOGADOR HUMANO (MUITO FRACO) -----
+  const tier1Ids = ['m10','m11','m19','m23','m24','m27','m28','m29','m30','m37','m39','s08','s09','s12','s13','s15','t10','t11'];
+  const tier2Ids = ['m05','m08','m16','m21','m25','m26','m32','m33','m34','m35','m36','m40','m41','m42','s04','s05','s10','s11','s14','s16','t08','t09'];
+  const tier3Ids = ['m01','m02','m03','m04','m06','m07','m09','m12','m13','m14','m15','m17','m18','m20','m22','s01','s02','s03','s06','s07','s17','s18'];
+
+  const allCards = [...ALL_CARDS];
+  const tier3 = allCards.filter(c => tier3Ids.includes(c.id));
+  const tier2 = allCards.filter(c => tier2Ids.includes(c.id));
+  const tier1 = allCards.filter(c => tier1Ids.includes(c.id));
+
+  // 10 monstros tier3 + 2 monstros tier2 (opcional) = 12
+  const monstrosTier3 = embaralhar([...tier3.filter(c => c.tipo === 'monstro')]).slice(0, 10);
+  const monstrosTier2 = embaralhar([...tier2.filter(c => c.tipo === 'monstro')]).slice(0, 2);
+  const todosMonstros = [...monstrosTier3, ...monstrosTier2];
+  // 4 magias tier3
+  const magias = embaralhar([...tier3.filter(c => c.tipo === 'magia')]).slice(0, 4);
+  // 4 armadilhas tier3
+  const armadilhas = embaralhar([...tier3.filter(c => c.tipo === 'armadilha')]).slice(0, 4);
+  
+  let deck = [...todosMonstros, ...magias, ...armadilhas];
+  // Preencher até 20 com tier3 (qualquer)
+  while (deck.length < 20) {
+    deck.push(tier3[Math.floor(Math.random() * tier3.length)]);
+  }
   return embaralhar(deck).slice(0, 20);
 }
 
@@ -229,6 +251,7 @@ function usarMagia(jogadorId, maoIndex, alvo) {
   const jogador = estado.jogadores[jogadorId]; const carta = jogador.mao[maoIndex];
   if (!carta || carta.tipo !== 'magia') return false;
   const oponenteId = jogadorId === 1 ? 2 : 1; const oponente = estado.jogadores[oponenteId];
+  // Verificar armadilha nega magia
   for (let i = 0; i < oponente.zonaMagias.length; i++) {
     const arm = oponente.zonaMagias[i];
     if (arm && arm.tipo === 'armadilha' && arm.viradaParaBaixo && arm.efeito === 'armadilha_negar_magia') {
@@ -340,6 +363,7 @@ async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
   let ataqueDiretoPermitido = false; if (atacante.efeito === 'se_oponente_tem_armadilha_ataque_direto') { const temArmadilha = defensor.zonaMagias.some(a => a !== null && a.viradaParaBaixo); if (temArmadilha) ataqueDiretoPermitido = true; }
   if (alvoTipo === 'jogador' && temMonstrosInimigos && !ataqueDiretoPermitido) { adicionarLog('Não pode atacar diretamente.'); return; }
   
+  // Verificar armadilhas antes do ataque
   for (let i = 0; i < defensor.zonaMagias.length; i++) { 
       const armadilha = defensor.zonaMagias[i];
       if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo) {
