@@ -1,44 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carddia - Batalha</title>
-    <link rel="stylesheet" href="css/base.css">
-    <link rel="stylesheet" href="css/game.css">
-    <!-- Firebase SDKs -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carddia - Batalha Online</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/game.css" />
+    <!-- Firebase SDKs (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-    <script>
-    // Sua configuração (a que você já tem)
-    const firebaseConfig = {
-        apiKey: "AIzaSyCBAjFzRPB013mCC5mVGs-rojDla9uChk",
-        authDomain: "carddia-card-game.firebaseapp.com",
-        projectId: "carddia-card-game",
-        storageBucket: "carddia-card-game.firebasestorage.app",
-        messagingSenderId: "934272406141",
-        appId: "1:934272406141:web:204496eb4f51045df15714"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.firestore();
-    </script>
 </head>
 <body>
     <div class="game-layout">
-        
         <!-- Botão Sair -->
         <button class="btn-sair" onclick="sairDaPartida()">❌ Sair</button>
 
-        <!-- PAINEL ESQUERDO: Preview da Carta + Efeito abaixo -->
+        <!-- PAINEL ESQUERDO -->
         <div class="side-panel left">
             <div id="card-preview" class="big-preview hidden"></div>
             <div id="card-effect-display" class="card-effect-below hidden"></div>
         </div>
 
-        <!-- PAINEL CENTRAL: Campo de Batalha -->
+        <!-- PAINEL CENTRAL -->
         <div class="center-panel">
             <div id="game-container">
                 <div id="series-info" style="text-align: center; margin-bottom: 6px; font-weight: bold;"></div>
@@ -48,19 +32,19 @@
                         <span class="info-box hp" id="hp-p2">4000</span>
                         <span class="info-box" id="deck-p2">20</span>
                     </div>
-                    <div>Computador</div>
+                    <div id="player2-name">Oponente</div>
                 </div>
 
                 <div class="board">
                     <div class="row">
                         <div class="zone">
-                            <div class="zone-label">Magias/Armadilhas do Computador</div>
+                            <div class="zone-label">Magias/Armadilhas do Oponente</div>
                             <div class="slots" id="magia-slots-p2"></div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="zone">
-                            <div class="zone-label">Monstros do Computador</div>
+                            <div class="zone-label">Monstros do Oponente</div>
                             <div class="slots" id="monstro-slots-p2"></div>
                         </div>
                     </div>
@@ -86,7 +70,7 @@
                         <span class="info-box hp" id="hp-p1">4000</span>
                         <span class="info-box" id="deck-p1">20</span>
                     </div>
-                    <div id="player-nick-display">Você</div>
+                    <div id="player1-name">Você</div>
                 </div>
 
                 <div id="hand-container">
@@ -96,18 +80,18 @@
             </div>
         </div>
 
-        <!-- PAINEL DIREITO: Logs, Placar e Botões -->
+        <!-- PAINEL DIREITO -->
         <div class="side-panel right">
             <div id="log" class="game-log"></div>
             
             <div id="scoreboard" class="game-scoreboard">
                 <div class="score-player">
-                    <span>Computador</span>
+                    <span id="score-p2-label">Oponente</span>
                     <span id="score-p2" class="score-number">0</span>
                 </div>
                 <div class="score-vs">X</div>
                 <div class="score-player">
-                    <span id="score-player-name">Você</span>
+                    <span id="score-p1-label">Você</span>
                     <span id="score-p1" class="score-number">0</span>
                 </div>
             </div>
@@ -146,9 +130,8 @@
         </div>
     </div>
 
-    <!-- Scripts (Ordem Corrigida: AI primeiro, depois GAME) -->
+    <!-- Scripts -->
     <script src="js/cards.js"></script>
-    <script src="js/ai.js"></script>
-    <script src="js/game.js"></script>
+    <script src="js/game_online.js"></script>
 </body>
 </html>

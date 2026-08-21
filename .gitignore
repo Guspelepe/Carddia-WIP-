@@ -1,0 +1,28 @@
+# Dependências do Node (caso tenha instalado algo)
+node_modules/
+package-lock.json
+package.json  # se não quiser commitar (mas pode commitar se quiser)
+
+# Arquivos de ambiente / secrets (NUNCA commitar)
+.env
+.firebaserc
+firebase.json  # se você usou CLI do Firebase
+*.log
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos temporários de editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos de build
+dist/
+build/
+*.min.js
+
+# Se você tiver imagens grandes (mais de 100MB), pode ignorar
+# img/*.png (se forem muitas)

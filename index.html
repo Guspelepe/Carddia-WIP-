@@ -1,47 +1,24 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carddia</title>
-    <link rel="stylesheet" href="css/menu.css">
-    <link rel="stylesheet" href="css/base.css">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carddia - Login</title>
+    <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <!-- Firebase SDKs (CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        /* Estilos específicos do Menu */
-        body.menu-page {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-        }
-        .menu-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 30px;
-            padding: 40px;
-            background: #34495e;
-            border-radius: 20px;
-            box-shadow: 0 0 40px rgba(0,0,0,0.6);
-            width: 500px;
-            max-width: 90%;
-        }
-        .menu-logo {
-            width: 300px;
-            max-width: 100%;
-            object-fit: contain;
-        }
-        .menu-input-group {
+        /* Estilos adicionais para login */
+        .auth-container {
             width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
         }
-        .menu-input-group label { font-weight: bold; font-size: 1.1em; }
-        .menu-input-group input {
+        .auth-container input {
             padding: 12px 15px;
             border-radius: 8px;
             border: none;
@@ -50,79 +27,192 @@
             color: white;
             outline: 2px solid #7f8c8d;
         }
-        .menu-input-group input:focus { outline-color: #3498db; }
-        .menu-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 100%;
-            margin-top: 10px;
+        .auth-container input:focus {
+            outline-color: #3498db;
         }
-        .menu-btn {
-            padding: 15px;
-            font-size: 1.2em;
+        .auth-container button {
+            padding: 12px;
+            font-size: 1.1em;
             font-weight: bold;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
             color: white;
-            transition: transform 0.2s;
+            background: #27ae60;
+            transition: 0.2s;
         }
-        .menu-btn:hover { transform: scale(1.03); }
-        .btn-online { background: linear-gradient(135deg, #e67e22, #f39c12); }
-        .btn-bot { background: linear-gradient(135deg, #2980b9, #3498db); }
-        
-        /* Modal Configuração */
-        .modal-field { margin-bottom: 15px; text-align: left; }
-        .modal-field label { display: block; margin-bottom: 5px; font-size: 0.9em; }
-        .modal-field select {
-            width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 1em;
+        .auth-container button:hover {
+            transform: scale(1.02);
         }
-        #btn-iniciar-partida {
-            width: 100%; padding: 12px; background: #27ae60; border: none; color: white; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 1.1em;
+        .auth-container .btn-secondary {
+            background: #34495e;
         }
-        #btn-iniciar-partida:hover { background: #2ecc71; }
+        .auth-container .btn-secondary:hover {
+            background: #2c3e50;
+        }
+        .auth-switch {
+            color: #bdc3c7;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.9em;
+        }
+        .auth-switch:hover {
+            color: #ecf0f1;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .error-msg {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body class="menu-page">
     <div class="menu-container">
-        <img src="img/logo.png" alt="Carddia" class="menu-logo">
+        <img src="img/logo.png" alt="Carddia" class="menu-logo" />
         
-        <div class="menu-input-group">
-            <label for="nickname">Nickname:</label>
-            <input type="text" id="nickname" placeholder="Digite seu nome">
+        <div id="auth-container" class="auth-container">
+            <!-- Formulário de Login -->
+            <div id="login-form">
+                <input type="email" id="login-email" placeholder="E-mail" />
+                <input type="password" id="login-password" placeholder="Senha" />
+                <button onclick="login()">Entrar</button>
+                <button class="btn-secondary" onclick="showRegister()">Criar Conta</button>
+                <div id="login-error" class="error-msg"></div>
+            </div>
+
+            <!-- Formulário de Cadastro -->
+            <div id="register-form" class="hidden">
+                <input type="email" id="register-email" placeholder="E-mail" />
+                <input type="password" id="register-password" placeholder="Senha" />
+                <input type="text" id="register-nick" placeholder="Nickname" />
+                <button onclick="register()">Cadastrar</button>
+                <button class="btn-secondary" onclick="showLogin()">Voltar</button>
+                <div id="register-error" class="error-msg"></div>
+            </div>
         </div>
 
-        <div class="menu-buttons">
-            <button class="menu-btn btn-online" onclick="alert('Em breve!')">Jogar Online</button>
-            <button class="menu-btn btn-bot" onclick="abrirModalBot()">Contra Bot</button>
+        <!-- Mensagem de boas-vindas (aparece após login) -->
+        <div id="welcome-msg" class="hidden" style="text-align:center;">
+            <p>Bem-vindo, <span id="user-nick"></span>!</p>
+            <button onclick="goToLobby()" style="padding:12px 30px; background:#3498db; border:none; border-radius:8px; color:white; font-weight:bold; cursor:pointer;">
+                Entrar no Lobby
+            </button>
         </div>
     </div>
 
-    <!-- Modal de Configuração -->
-    <div id="modal-config" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h2>Configurar Partida</h2>
-            <div class="modal-field">
-                <label for="modal-dificuldade">Dificuldade:</label>
-                <select id="modal-dificuldade">
-                    <option value="facil">Fácil</option>
-                    <option value="medio" selected>Médio</option>
-                    <option value="dificil">Difícil</option>
-                </select>
-            </div>
-            <div class="modal-field">
-                <label for="modal-melhor">Número de rodadas: </label>
-                <select id="modal-melhor">
-                    <option value="1">1 Rodada</option>
-                    <option value="3" selected>3 Rodadas</option>
-                    <option value="5">5 Rodadas</option>
-                </select>
-            </div>
-            <button id="btn-iniciar-partida" onclick="iniciarJogo()">Iniciar Partida</button>
-        </div>
-    </div>
+    <script>
+        // ========== CONFIGURAÇÃO FIREBASE (SUBSTITUA PELA SUA CHAVE) ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBAjjFzRPB013mCC5mVGs-rojDla9uChk",
+            authDomain: "carddia-card-game.firebaseapp.com",
+            projectId: "carddia-card-game",
+            storageBucket: "carddia-card-game.firebasestorage.app",
+            messagingSenderId: "934272406141",
+            appId: "1:934272406141:web:204496eb4f51045df15714"
+        };
+        // Inicialização (sintaxe compat, sem import)
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    <script src="js/main.js"></script>
+        // Elementos
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const welcomeMsg = document.getElementById('welcome-msg');
+        const userNickSpan = document.getElementById('user-nick');
+
+        function showLogin() {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        }
+
+        function showRegister() {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+        }
+
+        // Login
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const errorDiv = document.getElementById('login-error');
+            errorDiv.textContent = '';
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    window.location.href = 'lobby.html';
+                })
+                .catch(error => {
+                    errorDiv.textContent = error.message;
+                });
+        }
+
+        // Cadastro
+        function register() {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const nick = document.getElementById('register-nick').value.trim();
+            const errorDiv = document.getElementById('register-error');
+            errorDiv.textContent = '';
+            if (!nick) {
+                errorDiv.textContent = 'Digite um nickname.';
+                return;
+            }
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    const uid = userCredential.user.uid;
+                    return db.collection('users').doc(uid).set({
+                        nickname: nick,
+                        email: email,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    alert('Conta criada! Faça login.');
+                    showLogin();
+                    document.getElementById('login-email').value = email;
+                    document.getElementById('login-password').value = '';
+                    document.getElementById('register-email').value = '';
+                    document.getElementById('register-password').value = '';
+                    document.getElementById('register-nick').value = '';
+                })
+                .catch(error => {
+                    errorDiv.textContent = error.message;
+                });
+        }
+
+        // Verifica se o usuário já está logado
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                db.collection('users').doc(user.uid).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const nick = doc.data().nickname;
+                            userNickSpan.textContent = nick;
+                            loginForm.classList.add('hidden');
+                            registerForm.classList.add('hidden');
+                            welcomeMsg.classList.remove('hidden');
+                            // Redireciona automaticamente após 2 segundos
+                            setTimeout(() => {
+                                window.location.href = 'lobby.html';
+                            }, 2000);
+                        }
+                    });
+            }
+        });
+
+        function goToLobby() {
+            window.location.href = 'lobby.html';
+        }
+
+        // Expõe funções globalmente
+        window.login = login;
+        window.register = register;
+        window.showLogin = showLogin;
+        window.showRegister = showRegister;
+        window.goToLobby = goToLobby;
+    </script>
 </body>
 </html>

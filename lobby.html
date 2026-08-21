@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carddia - Lobby</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/menu.css" />
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        body {
+            background: #2c3e50;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', sans-serif;
+            padding: 20px;
+        }
+        .lobby-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #34495e;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+        .lobby-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .lobby-header h1 {
+            margin: 0;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary {
+            background: #27ae60;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2ecc71;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-secondary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #2980b9;
+        }
+        .match-list {
+            list-style: none;
+            padding: 0;
+        }
+        .match-item {
+            background: #2c3e50;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .match-item .info {
+            display: flex;
+            flex-direction: column;
+        }
+        .match-item .info .status {
+            font-size: 0.8em;
+            color: #bdc3c7;
+        }
+        .empty-msg {
+            text-align: center;
+            color: #bdc3c7;
+            padding: 30px;
+        }
+        .logout-btn {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .error-msg {
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+        .loading {
+            opacity: 0.6;
+            cursor: wait;
+        }
+    </style>
+</head>
+<body>
+    <div class="lobby-container">
+        <div class="lobby-header">
+            <h1>🏟️ Lobby</h1>
+            <div>
+                <button class="btn btn-primary" id="btn-create" onclick="createMatch()">+ Criar Sala</button>
+                <button class="btn btn-secondary" onclick="refreshList()">🔄 Atualizar</button>
+            </div>
+        </div>
+
+        <div id="user-info" style="margin-bottom:15px; font-size:0.9em; color:#bdc3c7;">
+            <span id="user-nick-display"></span>
+        </div>
+
+        <div id="match-list-container">
+            <ul id="match-list" class="match-list">
+                <li class="empty-msg">Carregando salas...</li>
+            </ul>
+        </div>
+
+        <div id="error-display" class="error-msg" style="display:none;"></div>
+
+        <div class="logout-btn">
+            <button class="btn btn-danger" onclick="logout()">Sair</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== CONFIGURAÇÃO FIREBASE ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBAjjFzRPB013mCC5mVGs-rojDla9uChk",
+            authDomain: "carddia-card-game.firebaseapp.com",
+            projectId: "carddia-card-game",
+            storageBucket: "carddia-card-game.firebasestorage.app",
+            messagingSenderId: "934272406141",
+            appId: "1:934272406141:web:204496eb4f51045df15714"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let currentUser = null;
+        let currentNick = '';
+        let isReady = false; // para evitar cliques antes de carregar
+
+        auth.onAuthStateChanged(user => {
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+            currentUser = user;
+            // Buscar nickname
+            db.collection('users').doc(user.uid).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        currentNick = doc.data().nickname || 'Jogador';
+                    } else {
+                        currentNick = 'Jogador';
+                    }
+                    document.getElementById('user-nick-display').textContent = '👤 ' + currentNick;
+                    isReady = true;
+                    listenMatches();
+                })
+                .catch(err => {
+                    console.error('Erro ao buscar nickname:', err);
+                    currentNick = 'Jogador';
+                    document.getElementById('user-nick-display').textContent = '👤 ' + currentNick;
+                    isReady = true;
+                    listenMatches();
+                });
+        });
+
+        function listenMatches() {
+            const list = document.getElementById('match-list');
+            db.collection('matches')
+                .where('status', 'in', ['waiting', 'playing'])
+                .orderBy('createdAt', 'desc')
+                .onSnapshot(snapshot => {
+                    if (snapshot.empty) {
+                        list.innerHTML = '<li class="empty-msg">Nenhuma sala disponível. Crie uma!</li>';
+                        return;
+                    }
+                    let html = '';
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const player1 = data.players.player1;
+                        const player2 = data.players.player2;
+                        const status = data.status;
+                        const isFull = player2 !== null;
+                        const isCreator = currentUser && player1 && player1.uid === currentUser.uid;
+                        const isPlayer2 = currentUser && player2 && player2.uid === currentUser.uid;
+
+                        let actionHtml = '';
+                        if (status === 'waiting' && !isFull) {
+                            if (!isCreator && !isPlayer2) {
+                                actionHtml = `<button class="btn btn-primary" onclick="joinMatch('${doc.id}')">Entrar</button>`;
+                            } else {
+                                actionHtml = `<span style="color:#f1c40f;">Aguardando oponente...</span>`;
+                            }
+                        } else if (status === 'playing') {
+                            if (isCreator || isPlayer2) {
+                                actionHtml = `<button class="btn btn-secondary" onclick="goToMatch('${doc.id}')">Continuar</button>`;
+                            } else {
+                                actionHtml = `<span style="color:#e74c3c;">Partida em andamento</span>`;
+                            }
+                        } else {
+                            actionHtml = `<span style="color:#7f8c8d;">Finalizada</span>`;
+                        }
+
+                        const player1Nick = player1 ? player1.nick : '?';
+                        const player2Nick = player2 ? player2.nick : 'Aguardando...';
+                        html += `
+                            <li class="match-item">
+                                <div class="info">
+                                    <span><strong>${player1Nick}</strong> vs <strong>${player2Nick}</strong></span>
+                                    <span class="status">${status === 'waiting' ? '🟢 Aguardando' : '🔴 Em andamento'}</span>
+                                </div>
+                                <div>${actionHtml}</div>
+                            </li>
+                        `;
+                    });
+                    list.innerHTML = html;
+                }, error => {
+                    console.error('Erro no listener:', error);
+                    document.getElementById('error-display').textContent = 'Erro ao carregar salas: ' + error.message;
+                    document.getElementById('error-display').style.display = 'block';
+                });
+        }
+
+        function createMatch() {
+            const btn = document.getElementById('btn-create');
+            btn.disabled = true;
+            btn.textContent = 'Criando...';
+            btn.classList.add('loading');
+
+            if (!isReady) {
+                alert('Aguarde o carregamento do perfil.');
+                btn.disabled = false;
+                btn.textContent = '+ Criar Sala';
+                btn.classList.remove('loading');
+                return;
+            }
+
+            if (!currentUser) {
+                alert('Você não está logado.');
+                btn.disabled = false;
+                btn.textContent = '+ Criar Sala';
+                btn.classList.remove('loading');
+                return;
+            }
+
+            console.log('Criando sala para:', currentUser.uid, currentNick);
+
+            const matchRef = db.collection('matches').doc();
+            const matchData = {
+                status: 'waiting',
+                players: {
+                    player1: { uid: currentUser.uid, nick: currentNick, ready: false },
+                    player2: null
+                },
+                gameState: null,
+                actions: [],
+                currentTurn: 1,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            matchRef.set(matchData)
+                .then(() => {
+                    console.log('Sala criada com ID:', matchRef.id);
+                    btn.disabled = false;
+                    btn.textContent = '+ Criar Sala';
+                    btn.classList.remove('loading');
+                    goToMatch(matchRef.id);
+                })
+                .catch(err => {
+                    console.error('Erro ao criar sala:', err);
+                    alert('Erro ao criar sala: ' + err.message);
+                    btn.disabled = false;
+                    btn.textContent = '+ Criar Sala';
+                    btn.classList.remove('loading');
+                    document.getElementById('error-display').textContent = 'Erro: ' + err.message;
+                    document.getElementById('error-display').style.display = 'block';
+                });
+        }
+
+        function joinMatch(matchId) {
+            if (!currentUser) {
+                alert('Você não está logado.');
+                return;
+            }
+            const matchRef = db.collection('matches').doc(matchId);
+            db.runTransaction(transaction => {
+                return transaction.get(matchRef)
+                    .then(doc => {
+                        const data = doc.data();
+                        if (!data || data.status !== 'waiting' || data.players.player2 !== null) {
+                            throw new Error('Esta sala não está disponível.');
+                        }
+                        transaction.update(matchRef, {
+                            'players.player2': { uid: currentUser.uid, nick: currentNick, ready: false },
+                            status: 'playing'
+                        });
+                    });
+            })
+            .then(() => {
+                goToMatch(matchId);
+            })
+            .catch(err => {
+                alert('Erro ao entrar: ' + err.message);
+                console.error(err);
+            });
+        }
+
+        function goToMatch(matchId) {
+            window.location.href = `game_online.html?matchId=${matchId}`;
+        }
+
+        function refreshList() {
+            // O onSnapshot já atualiza em tempo real.
+        }
+
+        function logout() {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            });
+        }
+
+        // Inicialização extra: se o usuário já estiver logado, mas o nickname não carregou, ainda assim permitir criar? Melhor aguardar.
+        // A flag isReady controla.
+    </script>
+</body>
+</html>
