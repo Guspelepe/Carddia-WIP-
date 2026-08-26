@@ -6,27 +6,93 @@
     <title>Carddia - Batalha Online</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/game.css" />
-    <!-- Firebase SDKs (CDN) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCBAjjFzRPB013mCC5mVGs-rojDla9uChk",
+            authDomain: "carddia-card-game.firebaseapp.com",
+            projectId: "carddia-card-game",
+            storageBucket: "carddia-card-game.firebasestorage.app",
+            messagingSenderId: "934272406141",
+            appId: "1:934272406141:web:204496eb4f51045df15714"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        console.log('🔥 Firebase inicializado!');
+    </script>
+    <style>
+        /* Estilos do chat */
+        .chat-container {
+            width: 100%;
+            max-height: 150px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 100px;
+            font-size: 0.8em;
+            color: #ecf0f1;
+            padding: 4px;
+        }
+        .chat-messages div {
+            margin-bottom: 2px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 2px 0;
+        }
+        .chat-messages .sender {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: none;
+            font-size: 0.8em;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .chat-input-area input:focus {
+            outline: 1px solid #3498db;
+        }
+        .chat-input-area button {
+            padding: 4px 12px;
+            background: #3498db;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .chat-input-area button:hover {
+            background: #2980b9;
+        }
+    </style>
 </head>
 <body>
     <div class="game-layout">
-        <!-- Botão Sair -->
         <button class="btn-sair" onclick="sairDaPartida()">❌ Sair</button>
-
-        <!-- PAINEL ESQUERDO -->
         <div class="side-panel left">
             <div id="card-preview" class="big-preview hidden"></div>
             <div id="card-effect-display" class="card-effect-below hidden"></div>
         </div>
-
-        <!-- PAINEL CENTRAL -->
         <div class="center-panel">
             <div id="game-container">
-                <div id="series-info" style="text-align: center; margin-bottom: 6px; font-weight: bold;"></div>
-
+                <div id="series-info" style="text-align:center; margin-bottom:6px; font-weight:bold;"></div>
                 <div class="player-area" id="player2-area">
                     <div class="player-info">
                         <span class="info-box hp" id="hp-p2">4000</span>
@@ -34,37 +100,13 @@
                     </div>
                     <div id="player2-name">Oponente</div>
                 </div>
-
                 <div class="board">
-                    <div class="row">
-                        <div class="zone">
-                            <div class="zone-label">Magias/Armadilhas do Oponente</div>
-                            <div class="slots" id="magia-slots-p2"></div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="zone">
-                            <div class="zone-label">Monstros do Oponente</div>
-                            <div class="slots" id="monstro-slots-p2"></div>
-                        </div>
-                    </div>
-
-                    <div style="border-top: 2px solid #7f8c8d; margin: 4px 0;"></div>
-
-                    <div class="row">
-                        <div class="zone">
-                            <div class="zone-label">Monstros do Jogador</div>
-                            <div class="slots" id="monstro-slots-p1"></div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="zone">
-                            <div class="zone-label">Magias/Armadilhas do Jogador</div>
-                            <div class="slots" id="magia-slots-p1"></div>
-                        </div>
-                    </div>
+                    <div class="row"><div class="zone"><div class="zone-label">Magias/Armadilhas do Oponente</div><div class="slots" id="magia-slots-p2"></div></div></div>
+                    <div class="row"><div class="zone"><div class="zone-label">Monstros do Oponente</div><div class="slots" id="monstro-slots-p2"></div></div></div>
+                    <div style="border-top:2px solid #7f8c8d; margin:4px 0;"></div>
+                    <div class="row"><div class="zone"><div class="zone-label">Monstros do Jogador</div><div class="slots" id="monstro-slots-p1"></div></div></div>
+                    <div class="row"><div class="zone"><div class="zone-label">Magias/Armadilhas do Jogador</div><div class="slots" id="magia-slots-p1"></div></div></div>
                 </div>
-
                 <div class="player-area" id="player1-area">
                     <div class="player-info">
                         <span class="info-box hp" id="hp-p1">4000</span>
@@ -72,56 +114,40 @@
                     </div>
                     <div id="player1-name">Você</div>
                 </div>
-
-                <div id="hand-container">
-                    <div class="hand-title">Sua Mão</div>
-                    <div id="hand"></div>
-                </div>
+                <div id="hand-container"><div class="hand-title">Sua Mão</div><div id="hand"></div></div>
             </div>
         </div>
-
-        <!-- PAINEL DIREITO -->
         <div class="side-panel right">
             <div id="log" class="game-log"></div>
-            
             <div id="scoreboard" class="game-scoreboard">
-                <div class="score-player">
-                    <span id="score-p2-label">Oponente</span>
-                    <span id="score-p2" class="score-number">0</span>
-                </div>
+                <div class="score-player"><span id="score-p2-label">Oponente</span><span id="score-p2" class="score-number">0</span></div>
                 <div class="score-vs">X</div>
-                <div class="score-player">
-                    <span id="score-p1-label">Você</span>
-                    <span id="score-p1" class="score-number">0</span>
-                </div>
+                <div class="score-player"><span id="score-p1-label">Você</span><span id="score-p1" class="score-number">0</span></div>
             </div>
-
             <div class="actions-container">
                 <button id="btn-atacar" disabled>Atacar</button>
                 <button id="btn-encerrar" disabled>Encerrar Turno</button>
             </div>
-        </div>
-    </div>
-
-    <!-- MODAL DE POSIÇÃO -->
-    <div id="modal-position" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3>Escolha a posição para invocar</h3>
-            <div class="modal-options">
-                <button id="btn-ataque" class="modal-option">Ataque</button>
-                <button id="btn-defesa" class="modal-option">Defesa</button>
+            <!-- CHAT -->
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Digite uma mensagem..." />
+                    <button id="chat-send-btn">Enviar</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE VITÓRIA DA RODADA (Some sozinho) -->
-    <div id="modal-round-winner" class="modal-overlay hidden modal-round">
-        <div class="modal-content">
-            <h2 id="round-winner-text">Rodada Vencida!</h2>
+    <div id="modal-position" class="modal-overlay hidden">
+        <div class="modal-content"><h3>Escolha a posição para invocar</h3>
+            <div class="modal-options">
+                <button id="btn-ataque-modal" class="modal-option">Ataque</button>
+                <button id="btn-defesa-modal" class="modal-option">Defesa</button>
+            </div>
         </div>
     </div>
-
-    <!-- MODAL DE VITÓRIA DO CAMPEONATO (Com botão "Jogar Novamente") -->
+    <div id="modal-round-winner" class="modal-overlay hidden modal-round"><div class="modal-content"><h2 id="round-winner-text">Rodada Vencida!</h2></div></div>
     <div id="modal-endgame" class="modal-overlay hidden modal-endgame">
         <div class="modal-content">
             <h2>🏆 Campeonato Encerrado!</h2>
@@ -130,8 +156,8 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="js/cards.js"></script>
+    <script src="js/game_engine.js"></script>
     <script src="js/game_online.js"></script>
 </body>
 </html>
