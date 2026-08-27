@@ -6,75 +6,52 @@
     <title>Carddia - Lobby</title>
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/lobby.css" />
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        body {
-            background: #2c3e50;
-            color: #ecf0f1;
-            font-family: 'Segoe UI', sans-serif;
-            padding: 20px;
-        }
+        /* Estilos gerais */
         .lobby-container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
-            background: #34495e;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            padding: 20px;
         }
         .lobby-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
             flex-wrap: wrap;
-            gap: 10px;
         }
-        .lobby-header h1 {
-            margin: 0;
+        .lobby-menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin: 20px 0;
         }
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
+        .lobby-menu .menu-card {
+            background: #34495e;
+            padding: 20px;
+            border-radius: 16px;
+            width: 200px;
+            text-align: center;
             cursor: pointer;
-            transition: 0.2s;
+            transition: 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
-        .btn-primary {
-            background: #27ae60;
-            color: white;
+        .lobby-menu .menu-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
         }
-        .btn-primary:hover {
-            background: #2ecc71;
-        }
-        .btn-danger {
-            background: #e74c3c;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #c0392b;
-        }
-        .btn-secondary {
-            background: #3498db;
-            color: white;
-        }
-        .btn-secondary:hover {
-            background: #2980b9;
-        }
-        .btn-warning {
-            background: #f39c12;
-            color: white;
-        }
-        .btn-warning:hover {
-            background: #e67e22;
-        }
-        .match-list {
-            list-style: none;
-            padding: 0;
-        }
+        .lobby-menu .menu-card .icon { font-size: 3em; margin-bottom: 10px; }
+        .lobby-menu .menu-card h3 { margin: 10px 0 5px; }
+        .lobby-menu .menu-card p { font-size: 0.9em; color: #bdc3c7; }
+
+        /* Lista de salas abertas */
+        .match-list-container { margin-top: 30px; }
+        .match-list-container h2 { border-bottom: 2px solid #7f8c8d; padding-bottom: 10px; }
         .match-item {
             background: #2c3e50;
             padding: 15px 20px;
@@ -84,63 +61,204 @@
             justify-content: space-between;
             align-items: center;
         }
-        .match-item .info {
-            display: flex;
-            flex-direction: column;
+        .match-item .info { display: flex; flex-direction: column; }
+        .match-item .info .status { font-size: 0.8em; color: #bdc3c7; }
+
+        /* Modais */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(2px);
         }
-        .match-item .info .status {
-            font-size: 0.8em;
-            color: #bdc3c7;
+        .modal-overlay.hidden { display: none; }
+        .modal-content {
+            background: #ecf0f1; color: #2c3e50; padding: 30px; border-radius: 12px;
+            min-width: 350px; max-width: 500px; width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
         }
-        .empty-msg {
+        .modal-content h2, .modal-content h3 { margin-top: 0; }
+        .modal-field { margin-bottom: 15px; }
+        .modal-field label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .modal-field input, .modal-field select {
+            width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #95a5a6;
+            font-size: 1em; background: white; color: #2c3e50;
+        }
+        .modal-field input:focus { outline: 2px solid #3498db; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .modal-actions button { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        .btn-primary { background: #27ae60; color: white; }
+        .btn-primary:hover { background: #2ecc71; }
+        .btn-secondary { background: #3498db; color: white; }
+        .btn-secondary:hover { background: #2980b9; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #e67e22; }
+        .btn-small { padding: 5px 12px; font-size: 0.8em; }
+        .codigo-exibido {
+            font-size: 2em;
+            font-weight: bold;
+            color: #e67e22;
+            background: #2c3e50;
+            padding: 10px 20px;
+            border-radius: 8px;
             text-align: center;
-            color: #bdc3c7;
-            padding: 30px;
+            letter-spacing: 4px;
         }
-        .logout-btn {
-            margin-top: 20px;
-            text-align: right;
+
+        /* Cartas */
+        .modal-cards .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 10px 0;
         }
-        .error-msg {
-            color: #e74c3c;
-            margin-top: 10px;
+        .modal-cards .card-item {
+            background: white;
+            color: #2c3e50;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            font-size: 0.8em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .loading {
-            opacity: 0.6;
-            cursor: wait;
-        }
-        .header-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        .modal-cards .card-item .card-name { font-weight: bold; }
+        .modal-cards .card-item .card-type { font-size: 0.7em; color: #7f8c8d; }
+        .modal-cards .card-item .card-stats { font-size: 0.8em; }
     </style>
 </head>
 <body>
     <div class="lobby-container">
         <div class="lobby-header">
-            <h1>🏟️ Lobby</h1>
-            <div class="header-buttons">
-                <button class="btn btn-primary" id="btn-create" onclick="createMatch()">+ Criar Sala</button>
-                <button class="btn btn-warning" onclick="limparSalas()">🗑️ Limpar Salas</button>
-                <button class="btn btn-secondary" onclick="refreshList()">🔄 Atualizar</button>
+            <h1>🏟️ Carddia</h1>
+            <div>
+                <span id="user-nick-display" style="margin-right: 15px;"></span>
+                <button class="btn btn-danger" onclick="logout()">Sair</button>
             </div>
         </div>
 
-        <div id="user-info" style="margin-bottom:15px; font-size:0.9em; color:#bdc3c7;">
-            <span id="user-nick-display"></span>
+        <!-- Menu Principal -->
+        <div class="lobby-menu">
+            <div class="menu-card" onclick="abrirModalIA()">
+                <div class="icon">🤖</div>
+                <h3>Vs. IA</h3>
+                <p>Desafie o computador</p>
+            </div>
+            <div class="menu-card" onclick="matchmaking()">
+                <div class="icon">⚔️</div>
+                <h3>Matchmaking</h3>
+                <p>Encontre um oponente aleatório</p>
+            </div>
+            <div class="menu-card" onclick="abrirModalCriarSala()">
+                <div class="icon">🔑</div>
+                <h3>Criar Sala com Código</h3>
+                <p>Crie uma sala privada</p>
+            </div>
+            <div class="menu-card" onclick="abrirModalEntrarSala()">
+                <div class="icon">🚪</div>
+                <h3>Entrar com Código</h3>
+                <p>Use o código da sala</p>
+            </div>
+            <div class="menu-card" onclick="verCartas()">
+                <div class="icon">📜</div>
+                <h3>Ver Cartas</h3>
+                <p>Veja todas as cartas</p>
+            </div>
         </div>
 
-        <div id="match-list-container">
+        <!-- Salas Abertas (Lobby) -->
+        <div class="match-list-container">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>🏛️ Salas Abertas</h2>
+                <button class="btn btn-primary" onclick="criarSalaAberta()">+ Criar Sala Aberta</button>
+            </div>
             <ul id="match-list" class="match-list">
-                <li class="empty-msg">Carregando salas...</li>
+                <li class="empty-msg">Carregando salas abertas...</li>
             </ul>
         </div>
 
         <div id="error-display" class="error-msg" style="display:none;"></div>
+    </div>
 
-        <div class="logout-btn">
-            <button class="btn btn-danger" onclick="logout()">Sair</button>
+    <!-- Modal IA -->
+    <div id="modal-ia" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>🤖 Configuração da IA</h2>
+            <div class="modal-field">
+                <label>Dificuldade</label>
+                <select id="modal-dificuldade">
+                    <option value="facil">Fácil</option>
+                    <option value="medio" selected>Médio</option>
+                    <option value="dificil">Difícil</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Melhor de</label>
+                <select id="modal-melhor">
+                    <option value="1">1</option>
+                    <option value="3" selected>3</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modal-ia')">Cancelar</button>
+                <button class="btn-primary" onclick="iniciarIA()">Iniciar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Criar Sala com Código -->
+    <div id="modal-criar-sala" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>🔑 Criar Sala com Código</h2>
+            <div class="modal-field">
+                <label>Melhor de</label>
+                <select id="modal-criar-melhor">
+                    <option value="1">1</option>
+                    <option value="3" selected>3</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Senha (opcional)</label>
+                <input type="text" id="modal-criar-senha" placeholder="Deixe em branco para sem senha" maxlength="6" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modal-criar-sala')">Cancelar</button>
+                <button class="btn-primary" onclick="criarSalaComCodigo()">Criar Sala</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Entrar com Código -->
+    <div id="modal-entrar-sala" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>🚪 Entrar com Código</h2>
+            <div class="modal-field">
+                <label>Código da Sala</label>
+                <input type="text" id="modal-entrar-codigo" placeholder="Ex: AR73" maxlength="4" style="text-transform: uppercase;" />
+            </div>
+            <div class="modal-field">
+                <label>Senha (se houver)</label>
+                <input type="text" id="modal-entrar-senha" placeholder="Senha" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modal-entrar-sala')">Cancelar</button>
+                <button class="btn-primary" onclick="entrarPorCodigo()">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cartas -->
+    <div id="modal-cartas" class="modal-overlay hidden modal-cards">
+        <div class="modal-content" style="width: 80%; max-width: 900px;">
+            <h2>📜 Todas as Cartas</h2>
+            <div id="card-grid" class="card-grid"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modal-cartas')">Fechar</button>
+            </div>
         </div>
     </div>
 
@@ -163,6 +281,7 @@
         let isReady = false;
         let unsubscribeList = null;
 
+        // ========== AUTENTICAÇÃO ==========
         auth.onAuthStateChanged(user => {
             if (!user) {
                 window.location.href = 'index.html';
@@ -178,9 +297,8 @@
                     }
                     document.getElementById('user-nick-display').textContent = '👤 ' + currentNick;
                     isReady = true;
-                    // Limpar salas antigas automaticamente ao entrar
                     limparSalasAntigas();
-                    listenMatches();
+                    listenSalasAbertas();
                 })
                 .catch(err => {
                     console.error('Erro ao buscar nickname:', err);
@@ -188,86 +306,234 @@
                     document.getElementById('user-nick-display').textContent = '👤 ' + currentNick;
                     isReady = true;
                     limparSalasAntigas();
-                    listenMatches();
+                    listenSalasAbertas();
                 });
         });
 
-        // -------------------- Exclusão automática de salas antigas --------------------
-        function limparSalasAntigas() {
-            const limite = 30 * 60 * 1000; // 30 minutos em milissegundos
-            const agora = Date.now();
-            db.collection('matches')
-                .where('status', 'in', ['waiting', 'playing'])
-                .get()
-                .then(snapshot => {
-                    const batch = db.batch();
-                    let deletados = 0;
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        // Verifica se tem lastActivity ou createdAt
-                        let timestamp = data.lastActivity || data.createdAt;
-                        if (timestamp) {
-                            // Se for Firestore Timestamp, converte para Date
-                            const ts = timestamp.toDate ? timestamp.toDate().getTime() : timestamp;
-                            const idade = agora - ts;
-                            if (idade > limite) {
-                                batch.delete(doc.ref);
-                                deletados++;
-                            }
-                        } else {
-                            // Sem timestamp, deleta também (sala muito antiga)
-                            batch.delete(doc.ref);
-                            deletados++;
-                        }
-                    });
-                    if (deletados > 0) {
-                        batch.commit().then(() => {
-                            console.log(`🗑️ ${deletados} salas antigas removidas automaticamente.`);
-                        }).catch(err => console.error('Erro ao deletar salas antigas:', err));
-                    }
-                })
-                .catch(err => console.error('Erro ao buscar salas para limpeza:', err));
+        // ========== FUNÇÕES DE MODAL ==========
+        function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // ========== IA ==========
+        function abrirModalIA() { abrirModal('modal-ia'); }
+        function iniciarIA() {
+            const diff = document.getElementById('modal-dificuldade').value;
+            const bestof = document.getElementById('modal-melhor').value;
+            window.location.href = `game_ai.html?nick=${encodeURIComponent(currentNick)}&diff=${diff}&bestof=${bestof}`;
         }
 
-        // -------------------- Limpar todas as salas (manual) --------------------
-        function limparSalas() {
-            if (!confirm('Tem certeza que deseja deletar TODAS as salas (waiting e playing)? Esta ação não pode ser desfeita.')) return;
-            db.collection('matches')
-                .where('status', 'in', ['waiting', 'playing'])
-                .get()
-                .then(snapshot => {
-                    if (snapshot.empty) {
-                        alert('Nenhuma sala ativa para deletar.');
-                        return;
+        // ========== MATCHMAKING ==========
+        let unsubscribeQueue = null;
+        function matchmaking() {
+            if (!isReady || !currentUser) {
+                alert('Aguarde o carregamento do perfil.');
+                return;
+            }
+            const queueRef = db.collection('queue').doc(currentUser.uid);
+            queueRef.set({
+                uid: currentUser.uid,
+                nick: currentNick,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                alert('Você entrou na fila. Aguardando oponente...');
+                if (unsubscribeQueue) unsubscribeQueue();
+                const qRef = db.collection('queue').orderBy('timestamp', 'asc').limit(2);
+                unsubscribeQueue = qRef.onSnapshot(snapshot => {
+                    if (snapshot.size >= 2) {
+                        const docs = snapshot.docs;
+                        const p1 = docs[0].data();
+                        const p2 = docs[1].data();
+                        if (p1.uid === currentUser.uid || p2.uid === currentUser.uid) {
+                            // Criar sala automática
+                            const matchRef = db.collection('matches').doc();
+                            const matchData = {
+                                status: 'waiting',
+                                tipo: 'matchmaking',
+                                players: {
+                                    player1: { uid: p1.uid, nick: p1.nick },
+                                    player2: { uid: p2.uid, nick: p2.nick }
+                                },
+                                gameState: null,
+                                actions: [],
+                                currentTurn: 1,
+                                melhorDe: 3,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                                chat: []
+                            };
+                            matchRef.set(matchData).then(() => {
+                                // Remover da fila
+                                db.collection('queue').doc(p1.uid).delete();
+                                db.collection('queue').doc(p2.uid).delete();
+                                if (unsubscribeQueue) unsubscribeQueue();
+                                window.location.href = `game_online.html?matchId=${matchRef.id}`;
+                            });
+                        }
                     }
-                    const batch = db.batch();
-                    snapshot.forEach(doc => {
-                        batch.delete(doc.ref);
-                    });
-                    batch.commit().then(() => {
-                        alert(`✅ ${snapshot.size} salas deletadas com sucesso.`);
-                        refreshList();
-                    }).catch(err => {
-                        console.error('Erro ao deletar salas:', err);
-                        alert('Erro ao deletar salas.');
-                    });
+                }, err => {
+                    console.error('Erro na fila:', err);
+                });
+            }).catch(err => {
+                alert('Erro ao entrar na fila: ' + err.message);
+            });
+        }
+
+        // ========== SALAS COM CÓDIGO ==========
+        function abrirModalCriarSala() { abrirModal('modal-criar-sala'); }
+        function abrirModalEntrarSala() { abrirModal('modal-entrar-sala'); }
+
+        // Gerar código de 4 caracteres (2 letras + 2 números)
+        function gerarCodigo() {
+            const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const numeros = '0123456789';
+            let codigo = '';
+            for (let i = 0; i < 2; i++) codigo += letras[Math.floor(Math.random() * letras.length)];
+            for (let i = 0; i < 2; i++) codigo += numeros[Math.floor(Math.random() * numeros.length)];
+            // Embaralhar para misturar letras e números
+            return codigo.split('').sort(() => Math.random() - 0.5).join('');
+        }
+
+        // Verificar se o código já existe
+        async function codigoUnico(codigo) {
+            const snapshot = await db.collection('matches').where('codigo', '==', codigo).get();
+            return snapshot.empty;
+        }
+
+        async function criarSalaComCodigo() {
+            if (!isReady || !currentUser) {
+                alert('Aguarde o carregamento do perfil.');
+                return;
+            }
+            const melhorDe = parseInt(document.getElementById('modal-criar-melhor').value);
+            const senha = document.getElementById('modal-criar-senha').value.trim() || null;
+
+            // Gerar código único
+            let codigo = gerarCodigo();
+            let tentativas = 0;
+            while (!await codigoUnico(codigo) && tentativas < 20) {
+                codigo = gerarCodigo();
+                tentativas++;
+            }
+            if (tentativas >= 20) {
+                alert('Erro ao gerar código único. Tente novamente.');
+                return;
+            }
+
+            const matchRef = db.collection('matches').doc(codigo);
+            const matchData = {
+                codigo: codigo,
+                status: 'waiting',
+                tipo: 'privada',
+                senha: senha,
+                melhorDe: melhorDe,
+                players: {
+                    player1: { uid: currentUser.uid, nick: currentNick },
+                    player2: null
+                },
+                gameState: null,
+                actions: [],
+                currentTurn: 1,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                chat: []
+            };
+            try {
+                await matchRef.set(matchData);
+                alert(`Sala criada! Código: ${codigo}${senha ? ` | Senha: ${senha}` : ''}`);
+                fecharModal('modal-criar-sala');
+                window.location.href = `game_online.html?matchId=${codigo}`;
+            } catch (err) {
+                alert('Erro ao criar sala: ' + err.message);
+            }
+        }
+
+        async function entrarPorCodigo() {
+            const codigo = document.getElementById('modal-entrar-codigo').value.trim().toUpperCase();
+            const senha = document.getElementById('modal-entrar-senha').value.trim() || null;
+            if (!codigo) {
+                alert('Digite o código.');
+                return;
+            }
+            if (!isReady || !currentUser) {
+                alert('Aguarde o carregamento do perfil.');
+                return;
+            }
+            try {
+                const doc = await db.collection('matches').doc(codigo).get();
+                if (!doc.exists) {
+                    alert('Sala não encontrada.');
+                    return;
+                }
+                const data = doc.data();
+                if (data.status === 'playing' || data.status === 'fim') {
+                    alert('Sala já está em andamento ou finalizada.');
+                    return;
+                }
+                // Verificar senha
+                if (data.senha && data.senha !== senha) {
+                    alert('Senha incorreta.');
+                    return;
+                }
+                // Verificar se já tem 2 jogadores
+                if (data.players.player2 !== null) {
+                    alert('Sala cheia.');
+                    return;
+                }
+                // Entrar
+                await doc.ref.update({
+                    'players.player2': { uid: currentUser.uid, nick: currentNick },
+                    status: 'playing',
+                    lastActivity: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                fecharModal('modal-entrar-sala');
+                window.location.href = `game_online.html?matchId=${codigo}`;
+            } catch (err) {
+                alert('Erro ao entrar: ' + err.message);
+            }
+        }
+
+        // ========== SALAS ABERTAS (LOBBY) ==========
+        function criarSalaAberta() {
+            if (!isReady || !currentUser) {
+                alert('Aguarde o carregamento do perfil.');
+                return;
+            }
+            const matchRef = db.collection('matches').doc();
+            const matchData = {
+                status: 'waiting',
+                tipo: 'aberta',
+                melhorDe: 3,
+                players: {
+                    player1: { uid: currentUser.uid, nick: currentNick },
+                    player2: null
+                },
+                gameState: null,
+                actions: [],
+                currentTurn: 1,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                chat: []
+            };
+            matchRef.set(matchData)
+                .then(() => {
+                    alert('Sala aberta criada!');
+                    window.location.href = `game_online.html?matchId=${matchRef.id}`;
                 })
                 .catch(err => {
-                    console.error('Erro ao buscar salas:', err);
-                    alert('Erro ao buscar salas.');
+                    alert('Erro ao criar sala: ' + err.message);
                 });
         }
 
-        // -------------------- Listener de salas --------------------
-        function listenMatches() {
+        function listenSalasAbertas() {
             if (unsubscribeList) unsubscribeList();
             const list = document.getElementById('match-list');
             unsubscribeList = db.collection('matches')
-                .where('status', 'in', ['waiting', 'playing'])
+                .where('status', 'in', ['waiting'])
+                .where('tipo', '==', 'aberta')
                 .orderBy('createdAt', 'desc')
                 .onSnapshot(snapshot => {
                     if (snapshot.empty) {
-                        list.innerHTML = '<li class="empty-msg">Nenhuma sala disponível. Crie uma!</li>';
+                        list.innerHTML = '<li class="empty-msg">Nenhuma sala aberta. Crie uma!</li>';
                         return;
                     }
                     let html = '';
@@ -275,26 +541,19 @@
                         const data = doc.data();
                         const player1 = data.players.player1;
                         const player2 = data.players.player2;
-                        const status = data.status;
                         const isFull = player2 !== null;
                         const isCreator = currentUser && player1 && player1.uid === currentUser.uid;
                         const isPlayer2 = currentUser && player2 && player2.uid === currentUser.uid;
 
                         let actionHtml = '';
-                        if (status === 'waiting' && !isFull) {
+                        if (!isFull) {
                             if (!isCreator && !isPlayer2) {
-                                actionHtml = `<button class="btn btn-primary" onclick="joinMatch('${doc.id}')">Entrar</button>`;
+                                actionHtml = `<button class="btn btn-primary btn-small" onclick="entrarSalaAberta('${doc.id}')">Entrar</button>`;
                             } else {
                                 actionHtml = `<span style="color:#f1c40f;">Aguardando oponente...</span>`;
                             }
-                        } else if (status === 'playing') {
-                            if (isCreator || isPlayer2) {
-                                actionHtml = `<button class="btn btn-secondary" onclick="goToMatch('${doc.id}')">Continuar</button>`;
-                            } else {
-                                actionHtml = `<span style="color:#e74c3c;">Partida em andamento</span>`;
-                            }
                         } else {
-                            actionHtml = `<span style="color:#7f8c8d;">Finalizada</span>`;
+                            actionHtml = `<span style="color:#e74c3c;">Cheia</span>`;
                         }
 
                         const player1Nick = player1 ? player1.nick : '?';
@@ -304,7 +563,7 @@
                             <li class="match-item">
                                 <div class="info">
                                     <span><strong>${player1Nick}</strong> vs <strong>${player2Nick}</strong></span>
-                                    <span class="status">${status === 'waiting' ? '🟢 Aguardando' : '🔴 Em andamento'} - ${idade}m atrás</span>
+                                    <span class="status">🟢 Aguardando - ${idade}m atrás</span>
                                 </div>
                                 <div>${actionHtml}</div>
                             </li>
@@ -318,65 +577,7 @@
                 });
         }
 
-        function createMatch() {
-            const btn = document.getElementById('btn-create');
-            btn.disabled = true;
-            btn.textContent = 'Criando...';
-            btn.classList.add('loading');
-
-            if (!isReady) {
-                alert('Aguarde o carregamento do perfil.');
-                btn.disabled = false;
-                btn.textContent = '+ Criar Sala';
-                btn.classList.remove('loading');
-                return;
-            }
-
-            if (!currentUser) {
-                alert('Você não está logado.');
-                btn.disabled = false;
-                btn.textContent = '+ Criar Sala';
-                btn.classList.remove('loading');
-                return;
-            }
-
-            console.log('Criando sala para:', currentUser.uid, currentNick);
-
-            const matchRef = db.collection('matches').doc();
-            const matchData = {
-                status: 'waiting',
-                players: {
-                    player1: { uid: currentUser.uid, nick: currentNick, ready: false },
-                    player2: null
-                },
-                gameState: null,
-                actions: [],
-                currentTurn: 1,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
-                chat: []
-            };
-
-            matchRef.set(matchData)
-                .then(() => {
-                    console.log('Sala criada com ID:', matchRef.id);
-                    btn.disabled = false;
-                    btn.textContent = '+ Criar Sala';
-                    btn.classList.remove('loading');
-                    goToMatch(matchRef.id);
-                })
-                .catch(err => {
-                    console.error('Erro ao criar sala:', err);
-                    alert('Erro ao criar sala: ' + err.message);
-                    btn.disabled = false;
-                    btn.textContent = '+ Criar Sala';
-                    btn.classList.remove('loading');
-                    document.getElementById('error-display').textContent = 'Erro: ' + err.message;
-                    document.getElementById('error-display').style.display = 'block';
-                });
-        }
-
-        function joinMatch(matchId) {
+        function entrarSalaAberta(matchId) {
             if (!currentUser) {
                 alert('Você não está logado.');
                 return;
@@ -387,17 +588,17 @@
                     .then(doc => {
                         const data = doc.data();
                         if (!data || data.status !== 'waiting' || data.players.player2 !== null) {
-                            throw new Error('Esta sala não está disponível.');
+                            throw new Error('Sala não disponível.');
                         }
                         transaction.update(matchRef, {
-                            'players.player2': { uid: currentUser.uid, nick: currentNick, ready: false },
+                            'players.player2': { uid: currentUser.uid, nick: currentNick },
                             status: 'playing',
                             lastActivity: firebase.firestore.FieldValue.serverTimestamp()
                         });
                     });
             })
             .then(() => {
-                goToMatch(matchId);
+                window.location.href = `game_online.html?matchId=${matchId}`;
             })
             .catch(err => {
                 alert('Erro ao entrar: ' + err.message);
@@ -405,16 +606,64 @@
             });
         }
 
-        function goToMatch(matchId) {
-            window.location.href = `game_online.html?matchId=${matchId}`;
+        // ========== VER CARTAS ==========
+        function verCartas() {
+            const modal = document.getElementById('modal-cartas');
+            const grid = document.getElementById('card-grid');
+            grid.innerHTML = '';
+            if (typeof ALL_CARDS !== 'undefined' && ALL_CARDS.length) {
+                ALL_CARDS.forEach(carta => {
+                    const div = document.createElement('div');
+                    div.className = 'card-item';
+                    let html = `<div class="card-name">${carta.nome}</div>`;
+                    html += `<div class="card-type">${carta.tipo}</div>`;
+                    if (carta.tipo === 'monstro') {
+                        html += `<div class="card-stats">ATK ${carta.atk} | DEF ${carta.def}</div>`;
+                    }
+                    if (carta.efeito) {
+                        html += `<div style="font-size:0.7em;color:#7f8c8d;">${carta.efeito}</div>`;
+                    }
+                    div.innerHTML = html;
+                    grid.appendChild(div);
+                });
+            } else {
+                grid.innerHTML = '<p>Nenhuma carta encontrada.</p>';
+            }
+            abrirModal('modal-cartas');
         }
 
-        function refreshList() {
-            // O onSnapshot já atualiza em tempo real, mas podemos forçar uma nova escuta
-            if (unsubscribeList) {
-                unsubscribeList();
-                listenMatches();
-            }
+        // ========== UTILITÁRIOS ==========
+        function limparSalasAntigas() {
+            const limite = 30 * 60 * 1000;
+            const agora = Date.now();
+            db.collection('matches')
+                .where('status', 'in', ['waiting', 'playing'])
+                .get()
+                .then(snapshot => {
+                    const batch = db.batch();
+                    let deletados = 0;
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        let timestamp = data.lastActivity || data.createdAt;
+                        if (timestamp) {
+                            const ts = timestamp.toDate ? timestamp.toDate().getTime() : timestamp;
+                            const idade = agora - ts;
+                            if (idade > limite) {
+                                batch.delete(doc.ref);
+                                deletados++;
+                            }
+                        } else {
+                            batch.delete(doc.ref);
+                            deletados++;
+                        }
+                    });
+                    if (deletados > 0) {
+                        batch.commit().then(() => {
+                            console.log(`🗑️ ${deletados} salas antigas removidas.`);
+                        }).catch(err => console.error('Erro ao deletar salas antigas:', err));
+                    }
+                })
+                .catch(err => console.error('Erro ao buscar salas para limpeza:', err));
         }
 
         function logout() {
@@ -422,6 +671,33 @@
                 window.location.href = 'index.html';
             });
         }
+
+        // ========== CARREGAR CARTAS ==========
+        function carregarCards() {
+            if (typeof ALL_CARDS === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'js/cards.js';
+                document.head.appendChild(script);
+                script.onload = () => {
+                    console.log('Cartas carregadas.');
+                };
+            }
+        }
+        carregarCards();
+
+        // Expor funções globalmente
+        window.abrirModalIA = abrirModalIA;
+        window.iniciarIA = iniciarIA;
+        window.matchmaking = matchmaking;
+        window.abrirModalCriarSala = abrirModalCriarSala;
+        window.abrirModalEntrarSala = abrirModalEntrarSala;
+        window.criarSalaComCodigo = criarSalaComCodigo;
+        window.entrarPorCodigo = entrarPorCodigo;
+        window.criarSalaAberta = criarSalaAberta;
+        window.entrarSalaAberta = entrarSalaAberta;
+        window.verCartas = verCartas;
+        window.logout = logout;
+        window.fecharModal = fecharModal;
     </script>
 </body>
 </html>

@@ -36,3 +36,33 @@ button:disabled { background-color: #7f8c8d; cursor: not-allowed; }
 .modal-content {
     background-color: #ecf0f1; color: #2c3e50; padding: 30px; border-radius: 12px; text-align: center; min-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
 }
+
+/* Melhorias visuais */
+body {
+    background: linear-gradient(135deg, #1a2a3a, #2c3e50);
+    font-family: 'Roboto', sans-serif;
+}
+
+.card {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.5);
+}
+
+button {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    transition: 0.2s;
+}
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4);
+}

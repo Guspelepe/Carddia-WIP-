@@ -22,7 +22,7 @@ function comprarCarta(jogadorId, quantidade = 1) {
   if (jogador.devePularCompra) { adicionarLog(`${nomeJogador(jogadorId)} teve sua compra pulada por um efeito!`); jogador.devePularCompra = false; return false; }
   for (let i = 0; i < quantidade; i++) {
     if (jogador.deck.length === 0) { finalizarDuelo(jogadorId === 1 ? 2 : 1, 'Deck vazio'); return false; }
-    let carta = jogador.deck.shift(); // SEMPRE tira a primeira carta
+    let carta = jogador.deck.shift();
     if (jogador.mao.length < 5) jogador.mao.push(carta);
     // Verificar armadilha Falso Tesouro (se o oponente tiver)
     for (let i = 0; i < estado.jogadores[jogadorId === 1 ? 2 : 1].zonaMagias.length; i++) {
@@ -40,40 +40,29 @@ function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 // ==================== MONTAGEM DE DECK ====================
 function montarDeck(jogadorId, deckCompleto, nivel) {
-  // IA usa a função específica (em ai.js)
   if (jogadorId === 2) {
     return window.aiMontarDeck ? window.aiMontarDeck(jogadorId, deckCompleto, nivel) : deckCompleto.slice(0, 20);
   }
-
-  // ----- DECK DO JOGADOR HUMANO (MUITO FRACO) -----
   const tier1Ids = ['m10','m11','m19','m23','m24','m27','m28','m29','m30','m37','m39','s08','s09','s12','s13','s15','t10','t11'];
   const tier2Ids = ['m05','m08','m16','m21','m25','m26','m32','m33','m34','m35','m36','m40','m41','m42','s04','s05','s10','s11','s14','s16','t08','t09'];
   const tier3Ids = ['m01','m02','m03','m04','m06','m07','m09','m12','m13','m14','m15','m17','m18','m20','m22','s01','s02','s03','s06','s07','s17','s18'];
-
   const allCards = [...ALL_CARDS];
   const tier3 = allCards.filter(c => tier3Ids.includes(c.id));
   const tier2 = allCards.filter(c => tier2Ids.includes(c.id));
   const tier1 = allCards.filter(c => tier1Ids.includes(c.id));
-
-  // 10 monstros tier3 + 2 monstros tier2 (opcional) = 12
   const monstrosTier3 = embaralhar([...tier3.filter(c => c.tipo === 'monstro')]).slice(0, 10);
   const monstrosTier2 = embaralhar([...tier2.filter(c => c.tipo === 'monstro')]).slice(0, 2);
   const todosMonstros = [...monstrosTier3, ...monstrosTier2];
-  // 4 magias tier3
   const magias = embaralhar([...tier3.filter(c => c.tipo === 'magia')]).slice(0, 4);
-  // 4 armadilhas tier3
   const armadilhas = embaralhar([...tier3.filter(c => c.tipo === 'armadilha')]).slice(0, 4);
-  
   let deck = [...todosMonstros, ...magias, ...armadilhas];
-  // Preencher até 20 com tier3 (qualquer)
   while (deck.length < 20) {
     deck.push(tier3[Math.floor(Math.random() * tier3.length)]);
   }
   return embaralhar(deck).slice(0, 20);
 }
 
-// ==================== DICIONÁRIO DE EFETOS (MOTOR DO JOGO) ====================
-// Mapa de Magias
+// ==================== DICIONÁRIO DE EFETOS ====================
 const MAPA_EFEITOS_MAGIA = {
     'buff_500': (jog, alvo) => { const m = jog.zonaMonstros[alvo.slot]; if (m) { m.bonusAtk = (m.bonusAtk||0) + 500; adicionarLog(`${m.nome} ganhou +500 de ATK.`); animarCarta(jog.id, 'monstro', alvo.slot); } },
     'buff_1000': (jog, alvo) => { const m = jog.zonaMonstros[alvo.slot]; if (m) { m.bonusAtk = (m.bonusAtk||0) + 1000; m.bonusDef = (m.bonusDef||0) + 1000; adicionarLog(`${m.nome} ganhou +1000 de ATK e DEF.`); animarCarta(jog.id, 'monstro', alvo.slot); } },
@@ -103,7 +92,6 @@ const MAPA_EFEITOS_MAGIA = {
     'destruir_monstros_baixo_atk': (jog, _, __, op) => { for (let i = 0; i < jog.zonaMonstros.length; i++) { const m = jog.zonaMonstros[i]; if (m && (m.atk + (m.bonusAtk||0)) <= 1500) destruirMonstro(jog.id, i, 'Punição dos Fracos'); } for (let i = 0; i < op.zonaMonstros.length; i++) { const m = op.zonaMonstros[i]; if (m && (m.atk + (m.bonusAtk||0)) <= 1500) destruirMonstro(op.id, i, 'Punição dos Fracos'); } render(); },
 };
 
-// Mapa de Efeitos de Invocação
 const MAPA_EFEITOS_INVOCACAO = {
     'ao_invocar_revive_monstro': (jog, m) => { if (jog.cemiterio.length > 0) { const f = jog.cemiterio.reduce((a,b) => b.atk > a.atk ? b : a); const idx = jog.cemiterio.indexOf(f); jog.cemiterio.splice(idx, 1); const v = jog.zonaMonstros.findIndex(s => s === null); if (v !== -1) { jog.zonaMonstros[v] = { ...f, jaAtacou: false, ataquesRestantes: 1, bonusAtk: 0, bonusDef: 0, temporario: false }; adicionarLog(`${m.nome} reviveu ${f.nome}!`); animarCarta(jog.id, 'monstro', v); } } },
     'ao_invocar_destroi_magia_armadilha': (jog, m, op) => { for (let i = 0; i < op.zonaMagias.length; i++) { if (op.zonaMagias[i]) { adicionarLog(`${m.nome} destruiu ${op.zonaMagias[i].nome}.`); op.zonaMagias[i] = null; } } render(); },
@@ -118,7 +106,6 @@ const MAPA_EFEITOS_INVOCACAO = {
     'ao_invocar_olhar_mao_oponente': (jog, m, op) => { const nomes = op.mao.map(c => c.nome).join(', '); adicionarLog(`${m.nome} espiou a mão: ${nomes}`); },
 };
 
-// Mapa de Efeitos de Morte
 const MAPA_EFEITOS_MORTE = {
     'quando_morre_ganha_500_vida': (jog) => { jog.hp += 500; adicionarLog(`${nomeJogador(jog.id)} ganhou 500 de vida.`); }
 };
@@ -251,7 +238,6 @@ function usarMagia(jogadorId, maoIndex, alvo) {
   const jogador = estado.jogadores[jogadorId]; const carta = jogador.mao[maoIndex];
   if (!carta || carta.tipo !== 'magia') return false;
   const oponenteId = jogadorId === 1 ? 2 : 1; const oponente = estado.jogadores[oponenteId];
-  // Verificar armadilha nega magia
   for (let i = 0; i < oponente.zonaMagias.length; i++) {
     const arm = oponente.zonaMagias[i];
     if (arm && arm.tipo === 'armadilha' && arm.viradaParaBaixo && arm.efeito === 'armadilha_negar_magia') {
@@ -348,22 +334,88 @@ function alternarPosicaoMonstro(jogadorId, slotIndex) {
 }
 
 // ==================== BATALHA DO JOGADOR ====================
-function iniciarBatalha() { if (estado.fase !== 'main' || estado.jogadorAtual !== 1 || estado.hasAttacked || estado.processandoAnimacao) return; if (estado.primeiroTurno && estado.jogadorAtual === 1) { adicionarLog('Você não pode atacar no primeiro turno.'); return; } const temAtacantes = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && (m.ataquesRestantes > 0 || m.efeito !== 'nao_pode_atacar') && !m.estaPreso && !m.naoPodeAtacarProximoTurno); if (!temAtacantes) { adicionarLog('Nenhum monstro em posição de ataque.'); return; } estado.fase = 'batalha'; estado.atacanteSelecionado = null; estado.acaoPendente = null; limparDestaques(); destacarAtacantesDisponiveis(1); adicionarLog('Selecione um monstro atacante.'); renderBotoes(); }
-function destacarAtacantesDisponiveis(jogadorId) { const slots = document.querySelectorAll(`#monstro-slots-p${jogadorId} .slot`); slots.forEach(slot => { const index = parseInt(slot.dataset.slot); const monstro = estado.jogadores[jogadorId].zonaMonstros[index]; if (monstro && monstro.posicao === 'ataque' && monstro.ataquesRestantes > 0 && monstro.efeito !== 'nao_pode_atacar' && !monstro.estaPreso && !monstro.naoPodeAtacarProximoTurno) slot.classList.add('highlight'); }); }
-function selecionarAtacante(slotIndex) { if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return; const monstro = estado.jogadores[1].zonaMonstros[slotIndex]; if (!monstro || monstro.posicao !== 'ataque' || monstro.ataquesRestantes === 0 || monstro.efeito === 'nao_pode_atacar' || monstro.estaPreso || monstro.naoPodeAtacarProximoTurno) return; estado.atacanteSelecionado = slotIndex; limparDestaques(); let ataqueDiretoPermitido = false; if (monstro.efeito === 'se_oponente_tem_armadilha_ataque_direto') { const temArmadilha = estado.jogadores[2].zonaMagias.some(a => a !== null && a.viradaParaBaixo); if (temArmadilha) ataqueDiretoPermitido = true; } const temMonstrosInimigos = estado.jogadores[2].zonaMonstros.some(m => m !== null); if (!temMonstrosInimigos || ataqueDiretoPermitido) document.getElementById('hp-p2').classList.add('highlight-target'); if (!temMonstrosInimigos && !ataqueDiretoPermitido) { adicionarLog(`${monstro.nome} selecionado. Ataque direto!`); } else { destacarAlvosInimigos(); adicionarLog(`Monstro selecionado: ${monstro.nome}. Escolha um alvo.`); } }
-function destacarAlvosInimigos() { const slots = document.querySelectorAll(`#monstro-slots-p2 .slot`); slots.forEach(slot => { const index = parseInt(slot.dataset.slot); if (estado.jogadores[2].zonaMonstros[index] !== null) slot.classList.add('highlight'); }); }
+function iniciarBatalha() { 
+  if (estado.fase !== 'main' || estado.jogadorAtual !== 1 || estado.hasAttacked || estado.processandoAnimacao) return; 
+  if (estado.primeiroTurno && estado.jogadorAtual === 1) { adicionarLog('Você não pode atacar no primeiro turno.'); return; } 
+  const temAtacantes = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && (m.ataquesRestantes > 0 || m.efeito !== 'nao_pode_atacar') && !m.estaPreso && !m.naoPodeAtacarProximoTurno); 
+  if (!temAtacantes) { adicionarLog('Nenhum monstro em posição de ataque.'); return; } 
+  estado.fase = 'batalha'; estado.atacanteSelecionado = null; estado.acaoPendente = null; limparDestaques(); 
+  destacarAtacantesDisponiveis(1); 
+  adicionarLog('Selecione um monstro atacante.'); 
+  renderBotoes(); 
+}
 
+function destacarAtacantesDisponiveis(jogadorId) { 
+  const slots = document.querySelectorAll(`#monstro-slots-p${jogadorId} .slot`); 
+  slots.forEach(slot => { 
+    const index = parseInt(slot.dataset.slot); 
+    const monstro = estado.jogadores[jogadorId].zonaMonstros[index]; 
+    if (monstro && monstro.posicao === 'ataque' && monstro.ataquesRestantes > 0 && monstro.efeito !== 'nao_pode_atacar' && !monstro.estaPreso && !monstro.naoPodeAtacarProximoTurno) 
+      slot.classList.add('highlight'); 
+  }); 
+}
+
+function selecionarAtacante(slotIndex) { 
+  if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return; 
+  const monstro = estado.jogadores[1].zonaMonstros[slotIndex]; 
+  if (!monstro || monstro.posicao !== 'ataque' || monstro.ataquesRestantes === 0 || monstro.efeito === 'nao_pode_atacar' || monstro.estaPreso || monstro.naoPodeAtacarProximoTurno) return; 
+  estado.atacanteSelecionado = slotIndex; 
+  limparDestaques(); 
+  let ataqueDiretoPermitido = false; 
+  const temMonstrosInimigos = estado.jogadores[2].zonaMonstros.some(m => m !== null); 
+  if (!temMonstrosInimigos) ataqueDiretoPermitido = true; 
+  if (monstro.efeito === 'ignora_defesa_ataque_direto' || monstro.efeito === 'se_oponente_tem_armadilha_ataque_direto') { 
+    if (monstro.efeito === 'se_oponente_tem_armadilha_ataque_direto') { 
+      const temArmadilha = estado.jogadores[2].zonaMagias.some(a => a !== null && a.viradaParaBaixo); 
+      if (temArmadilha) ataqueDiretoPermitido = true; 
+    } else ataqueDiretoPermitido = true; 
+  } 
+  if (!temMonstrosInimigos && !ataqueDiretoPermitido) { 
+    adicionarLog(`${monstro.nome} selecionado. Ataque direto!`); 
+  } else if (temMonstrosInimigos && !ataqueDiretoPermitido) { 
+    destacarAlvosInimigos(); 
+    adicionarLog(`Monstro selecionado: ${monstro.nome}. Escolha um alvo.`); 
+  } else { 
+    // Ataque direto permitido mesmo com monstros (por efeito)
+    document.getElementById('hp-p2').classList.add('highlight-target'); 
+    adicionarLog(`${monstro.nome} selecionado. Pode atacar diretamente!`); 
+  } 
+}
+
+function destacarAlvosInimigos() { 
+  const slots = document.querySelectorAll(`#monstro-slots-p2 .slot`); 
+  slots.forEach(slot => { 
+    const index = parseInt(slot.dataset.slot); 
+    if (estado.jogadores[2].zonaMonstros[index] !== null) slot.classList.add('highlight'); 
+  }); 
+}
+
+// ========== EXECUTAR ATAQUE (CORRIGIDO) ==========
 async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
   if (estado.fase !== 'batalha' || estado.jogadorAtual !== 1 || estado.processandoAnimacao) return;
   const atacante = estado.jogadores[1].zonaMonstros[atacanteSlot];
   if (!atacante || atacante.ataquesRestantes === 0 || atacante.estaPreso || atacante.naoPodeAtacarProximoTurno) return;
   if (atacante.efeito === 'paga_500_vida_para_atacar' && estado.jogadores[1].hp <= 500) { adicionarLog('Vida insuficiente.'); return; }
   if (atacante.efeito === 'paga_500_vida_para_atacar') estado.jogadores[1].hp -= 500;
-  const defensorId = 2; const defensor = estado.jogadores[defensorId]; const temMonstrosInimigos = defensor.zonaMonstros.some(m => m !== null);
-  let ataqueDiretoPermitido = false; if (atacante.efeito === 'se_oponente_tem_armadilha_ataque_direto') { const temArmadilha = defensor.zonaMagias.some(a => a !== null && a.viradaParaBaixo); if (temArmadilha) ataqueDiretoPermitido = true; }
-  if (alvoTipo === 'jogador' && temMonstrosInimigos && !ataqueDiretoPermitido) { adicionarLog('Não pode atacar diretamente.'); return; }
-  
-  // Verificar armadilhas antes do ataque
+
+  const defensorId = 2;
+  const defensor = estado.jogadores[defensorId];
+  const temMonstrosInimigos = defensor.zonaMonstros.some(m => m !== null);
+  let ataqueDiretoPermitido = false;
+  if (!temMonstrosInimigos) ataqueDiretoPermitido = true;
+  if (atacante.efeito === 'ignora_defesa_ataque_direto' || atacante.efeito === 'se_oponente_tem_armadilha_ataque_direto') {
+    if (atacante.efeito === 'se_oponente_tem_armadilha_ataque_direto') {
+      const temArmadilha = defensor.zonaMagias.some(a => a !== null && a.viradaParaBaixo);
+      if (temArmadilha) ataqueDiretoPermitido = true;
+    } else ataqueDiretoPermitido = true;
+  }
+
+  if (alvoTipo === 'jogador' && !ataqueDiretoPermitido) {
+    adicionarLog('Não pode atacar diretamente.');
+    return;
+  }
+
+  // Verificar armadilhas (código existente)
   for (let i = 0; i < defensor.zonaMagias.length; i++) { 
       const armadilha = defensor.zonaMagias[i];
       if (armadilha && armadilha.tipo === 'armadilha' && armadilha.viradaParaBaixo) {
@@ -390,12 +442,43 @@ async function executarAtaque(atacanteSlot, alvoTipo, alvoSlot) {
   estado.processandoAnimacao = true;
   const monstroDefensor = alvoTipo === 'monstro' ? defensor.zonaMonstros[alvoSlot] : null;
   await animarAtaque(atacanteSlot, alvoTipo === 'monstro' ? alvoSlot : null, 1, 2);
-  if (alvoTipo === 'jogador') { defensor.hp -= atacante.atk + (atacante.bonusAtk || 0); adicionarLog(`${atacante.nome} atacou diretamente! Computador perdeu ${atacante.atk + (atacante.bonusAtk || 0)} HP.`); atacante.ataquesRestantes--; if (atacante.efeito === 'ao_causar_dano_oponente_descarta_1_carta' && defensor.mao.length > 0) { const descartada = defensor.mao.pop(); adicionarLog(`${atacante.nome} descartou ${descartada.nome}.`); } if (verificarFimDeDuelo()) return; }
-  else { if (monstroDefensor) { resolverBatalha(1, 2, atacanteSlot, alvoSlot); atacante.ataquesRestantes--; if (monstroDefensor && !estado.jogadores[2].zonaMonstros.includes(monstroDefensor) && atacante.efeito === 'ao_destruir_inimigo_oponente_pula_compra') { estado.jogadores[2].devePularCompra = true; adicionarLog(`${atacante.nome} fez o oponente pular a compra!`); } } }
-  estado.processandoAnimacao = false; estado.atacanteSelecionado = null; limparDestaques(); render(); verificarFimBatalha();
+  if (alvoTipo === 'jogador') {
+    const dano = atacante.atk + (atacante.bonusAtk || 0);
+    defensor.hp -= dano;
+    adicionarLog(`${atacante.nome} atacou diretamente! Computador perdeu ${dano} HP.`);
+    atacante.ataquesRestantes--;
+    if (atacante.efeito === 'ao_causar_dano_oponente_descarta_1_carta' && defensor.mao.length > 0) {
+      const descartada = defensor.mao.pop();
+      adicionarLog(`${atacante.nome} descartou ${descartada.nome}.`);
+    }
+    if (verificarFimDeDuelo()) { estado.processandoAnimacao = false; return; }
+  } else {
+    if (monstroDefensor) {
+      resolverBatalha(1, 2, atacanteSlot, alvoSlot);
+      atacante.ataquesRestantes--;
+      if (monstroDefensor && !estado.jogadores[2].zonaMonstros.includes(monstroDefensor) && atacante.efeito === 'ao_destruir_inimigo_oponente_pula_compra') {
+        estado.jogadores[2].devePularCompra = true;
+        adicionarLog(`${atacante.nome} fez o oponente pular a compra!`);
+      }
+    }
+  }
+  estado.processandoAnimacao = false;
+  estado.atacanteSelecionado = null;
+  limparDestaques();
+  render();
+  verificarFimBatalha(); // reativa destaques se ainda houver atacantes
 }
 
-function verificarFimBatalha() { const aindaPodeAtacar = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && m.ataquesRestantes > 0 && m.efeito !== 'nao_pode_atacar' && !m.estaPreso && !m.naoPodeAtacarProximoTurno); if (aindaPodeAtacar) { destacarAtacantesDisponiveis(1); adicionarLog('Selecione outro monstro atacante ou encerre o turno.'); } else { adicionarLog('Todos os monstros atacaram. Encerre o turno.'); renderBotoes(); } }
+function verificarFimBatalha() {
+  const aindaPodeAtacar = estado.jogadores[1].zonaMonstros.some(m => m && m.posicao === 'ataque' && m.ataquesRestantes > 0 && m.efeito !== 'nao_pode_atacar' && !m.estaPreso && !m.naoPodeAtacarProximoTurno);
+  if (aindaPodeAtacar) {
+    destacarAtacantesDisponiveis(1);
+    adicionarLog('Selecione outro monstro atacante ou encerre o turno.');
+  } else {
+    adicionarLog('Todos os monstros atacaram. Encerre o turno.');
+    renderBotoes();
+  }
+}
 
 function resolverBatalha(jogadorAtacanteId, jogadorDefensorId, slotAtacante, slotDefensor) {
   const atacante = estado.jogadores[jogadorAtacanteId].zonaMonstros[slotAtacante]; const defensor = estado.jogadores[jogadorDefensorId].zonaMonstros[slotDefensor];
@@ -459,7 +542,9 @@ function animarCarta(jogadorId, zona, slotIndex, tipo = 'bright') { const select
 function handleSlotClick(jogadorId, zona, slotIndex) {
   if (estado.fase === 'batalha' && estado.jogadorAtual === 1 && !estado.processandoAnimacao) {
     if (jogadorId === 1 && zona === 'monstro') {
-      if (estado.atacanteSelecionado === null) selecionarAtacante(slotIndex); else if (estado.atacanteSelecionado === slotIndex) { estado.atacanteSelecionado = null; limparDestaques(); destacarAtacantesDisponiveis(1); adicionarLog('Selecione outro monstro atacante.'); } else selecionarAtacante(slotIndex);
+      if (estado.atacanteSelecionado === null) selecionarAtacante(slotIndex);
+      else if (estado.atacanteSelecionado === slotIndex) { estado.atacanteSelecionado = null; limparDestaques(); destacarAtacantesDisponiveis(1); adicionarLog('Selecione outro monstro atacante.'); }
+      else selecionarAtacante(slotIndex);
     } else if (jogadorId === 2 && zona === 'monstro') { if (estado.atacanteSelecionado !== null) executarAtaque(estado.atacanteSelecionado, 'monstro', slotIndex); }
     return;
   }
