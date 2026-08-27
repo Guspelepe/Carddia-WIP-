@@ -1,5 +1,5 @@
 // =============================================================
-// game_engine.js – Lógica central do jogo (corrigido)
+// game_engine.js – Lógica central do jogo (sem animação visual de ataque)
 // =============================================================
 
 console.log('🧠 game_engine.js carregado!');
@@ -363,6 +363,10 @@ function invocarMonstro(jogadorId, maoIndex, slotIndex, posicao, estado) {
         const oponente = estado.jogadores[jogadorId === 1 ? 2 : 1];
         MAPA_EFEITOS_INVOCACAO[monstro.efeito](jogador, monstro, oponente, estado);
     }
+
+    // Verificar armadilhas de invocação
+    verificarArmadilhasInvocacao(jogadorId, slotIndex, estado);
+
     return true;
 }
 
@@ -458,7 +462,6 @@ function encerrarTurno(estado) {
         window.adicionarLog(estado.jogadorAtual, 'Fase de batalha encerrada.');
     }
 
-    // Aplicar efeitos de fim de turno
     const p1 = estado.jogadores[1];
     const p2 = estado.jogadores[2];
     [p1, p2].forEach((jogador, idx) => {
@@ -492,7 +495,6 @@ function encerrarTurno(estado) {
         }
     });
 
-    // Trocar turno
     const outro = estado.jogadorAtual === 1 ? 2 : 1;
     estado.jogadorAtual = outro;
     estado.turno++;
@@ -504,7 +506,6 @@ function encerrarTurno(estado) {
     estado.acaoPendente = null;
     window.limparDestaques();
 
-    // Resetar monstros
     for (let i = 1; i <= 2; i++) {
         estado.jogadores[i].zonaMonstros.forEach(m => {
             if (m) {
@@ -517,7 +518,6 @@ function encerrarTurno(estado) {
         });
     }
 
-    // Comprar carta para o próximo
     const prox = estado.jogadores[outro];
     window.comprarCarta(prox.id, 5 - prox.mao.length, estado);
     window.adicionarLog(outro, `--- Turno ${estado.turno} - ${window.nomeJogador(outro)} ---`);
@@ -525,7 +525,6 @@ function encerrarTurno(estado) {
 
 function verificarFimDeDuelo(estado) {
     if (estado.fase === 'fim') return true;
-    // Verifica se os jogadores existem antes de acessar hp
     if (!estado.jogadores || !estado.jogadores[1] || !estado.jogadores[2]) return false;
     if (estado.jogadores[1].hp <= 0) {
         finalizarDuelo(2, 'HP zerado', estado);
@@ -542,15 +541,13 @@ function finalizarDuelo(vencedorId, motivo, estado) {
     if (estado.fase === 'fim') return;
     estado.fase = 'fim';
     window.adicionarLog(vencedorId, `🏆 ${window.nomeJogador(vencedorId)} venceu o duelo! Motivo: ${motivo}`);
-    // Atualizar placar (se houver campeonato)
     if (estado.campeonato) {
         if (vencedorId === 1) estado.campeonato.vitoriasJ1++;
         else estado.campeonato.vitoriasJ2++;
-        // ... resto da lógica de campeonato (opcional)
     }
 }
 
-// -------------------- Animações --------------------
+// -------------------- Animações de Carta (sem seta) --------------------
 function animarCarta(jogadorId, zona, slotIndex, tipo = 'bright') {
     const selector = `#${zona}-slots-p${jogadorId} .slot[data-slot="${slotIndex}"] .card`;
     const cardElement = document.querySelector(selector);
@@ -581,7 +578,142 @@ function animarAtaque(atacanteSlot, defensorSlot, jogadorAtacanteId, jogadorDefe
     });
 }
 
-// -------------------- Exportações globais --------------------
+// -------------------- Verificação de Armadilhas --------------------
+function verificarArmadilhasInvocacao(jogadorInvoker, slotIndex, estado) {
+    const invocador = estado.jogadores[jogadorInvoker];
+    const oponente = estado.jogadores[jogadorInvoker === 1 ? 2 : 1];
+    const monstro = invocador.zonaMonstros[slotIndex];
+    if (!monstro) return;
+
+    for (let i = 0; i < oponente.zonaMagias.length; i++) {
+        const arm = oponente.zonaMagias[i];
+        if (arm && arm.tipo === 'armadilha' && arm.viradaParaBaixo) {
+            if (arm.efeito === 'armadilha_ira' && monstro.atk > 2000) {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(oponente.id, 'magia', i, 'trap');
+                window.adicionarLog(oponente.id, `Armadilha "Ira do Submundo" ativada!`);
+                window.destruirMonstro(jogadorInvoker, slotIndex, 'Ira do Submundo', estado);
+                oponente.zonaMagias[i] = null;
+                break;
+            } else if (arm.efeito === 'armadilha_negar_invocacao') {
+                if (monstro.efeito !== 'imune_a_armadilhas' && monstro.efeito !== 'nao_pode_ser_destruido_por_efeito') {
+                    arm.viradaParaBaixo = false;
+                    window.animarCarta(oponente.id, 'magia', i, 'trap');
+                    window.adicionarLog(oponente.id, `Armadilha "Julgamento Divino" ativada!`);
+                    invocador.zonaMonstros[slotIndex] = null;
+                    invocador.cemiterio.push(monstro);
+                    oponente.zonaMagias[i] = null;
+                    window.adicionarLog(jogadorInvoker, `${monstro.nome} foi destruído.`);
+                    break;
+                }
+            } else if (arm.efeito === 'armadilha_destruir_todos' && monstro.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(oponente.id, 'magia', i, 'trap');
+                window.adicionarLog(oponente.id, `Armadilha "Buraco Negro" ativada! Todos os monstros são destruídos!`);
+                for (let j = 0; j < 3; j++) {
+                    if (invocador.zonaMonstros[j]) window.destruirMonstro(jogadorInvoker, j, 'Buraco Negro', estado);
+                    if (oponente.zonaMonstros[j]) window.destruirMonstro(oponente.id, j, 'Buraco Negro', estado);
+                }
+                oponente.zonaMagias[i] = null;
+                break;
+            } else if (arm.efeito === 'armadilha_dano_invocacao_1000') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(oponente.id, 'magia', i, 'trap');
+                window.adicionarLog(oponente.id, `Armadilha "Maldição do Sangue" ativada! ${window.nomeJogador(jogadorInvoker)} perdeu 1000 PV.`);
+                invocador.hp -= 1000;
+                oponente.zonaMagias[i] = null;
+                window.verificarFimDeDuelo(estado);
+                break;
+            }
+        }
+    }
+}
+
+function verificarArmadilhasAtaque(jogadorAtacanteId, atacanteSlot, alvoTipo, alvoSlot, estado) {
+    const atacante = estado.jogadores[jogadorAtacanteId].zonaMonstros[atacanteSlot];
+    if (!atacante) return false;
+    const defensorId = jogadorAtacanteId === 1 ? 2 : 1;
+    const defensor = estado.jogadores[defensorId];
+
+    for (let i = 0; i < defensor.zonaMagias.length; i++) {
+        const arm = defensor.zonaMagias[i];
+        if (arm && arm.tipo === 'armadilha' && arm.viradaParaBaixo) {
+            if (arm.efeito === 'armadilha_escudo' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Escudo de Atenas" ativada!`);
+                atacante.posicao = 'defesa';
+                atacante.ataquesRestantes--;
+                defensor.zonaMagias[i] = null;
+                window.limparDestaques();
+                window.adicionarLog(jogadorAtacanteId, `${atacante.nome} foi colocado em defesa.`);
+                return true;
+            } else if (arm.efeito === 'armadilha_destruir_atacantes' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Força Espelhada" ativada!`);
+                for (let j = 0; j < estado.jogadores[jogadorAtacanteId].zonaMonstros.length; j++) {
+                    const m = estado.jogadores[jogadorAtacanteId].zonaMonstros[j];
+                    if (m && m.posicao === 'ataque' && m.efeito !== 'imune_a_armadilhas' && m.efeito !== 'nao_pode_ser_destruido_por_efeito') {
+                        window.destruirMonstro(jogadorAtacanteId, j, 'Força Espelhada', estado);
+                    }
+                }
+                defensor.zonaMagias[i] = null;
+                window.limparDestaques();
+                return true;
+            } else if (arm.efeito === 'armadilha_refletir_dano' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Cilindro Mágico" ativada!`);
+                const dano = atacante.atk + (atacante.bonusAtk || 0);
+                estado.jogadores[jogadorAtacanteId].hp -= dano;
+                window.adicionarLog(jogadorAtacanteId, `${atacante.nome} teve seu ataque refletido! ${window.nomeJogador(jogadorAtacanteId)} perdeu ${dano} HP.`);
+                atacante.ataquesRestantes--;
+                defensor.zonaMagias[i] = null;
+                window.verificarFimDeDuelo(estado);
+                return true;
+            } else if (arm.efeito === 'armadilha_zerar_ataque' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Areia Movediça" ativada!`);
+                atacante.bonusAtk = -atacante.atk;
+                atacante.ataquesRestantes--;
+                defensor.zonaMagias[i] = null;
+                return true;
+            } else if (arm.efeito === 'armadilha_curar_pelo_ataque' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Rede de Captura" ativada!`);
+                defensor.hp += atacante.atk + (atacante.bonusAtk || 0);
+                atacante.ataquesRestantes--;
+                defensor.zonaMagias[i] = null;
+                return true;
+            } else if (arm.efeito === 'armadilha_pular_fase_batalha' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Barreira de Gelo" ativada!`);
+                defensor.zonaMagias[i] = null;
+                estado.fase = 'main';
+                estado.hasAttacked = true;
+                window.limparDestaques();
+                return true;
+            } else if (arm.efeito === 'armadilha_invoca_copia' && atacante.efeito !== 'imune_a_armadilhas') {
+                arm.viradaParaBaixo = false;
+                window.animarCarta(defensorId, 'magia', i, 'trap');
+                window.adicionarLog(defensorId, `Armadilha "Espelhos Gêmeos" ativada!`);
+                const slotVazio = defensor.zonaMonstros.findIndex(s => s === null);
+                if (slotVazio !== -1) {
+                    defensor.zonaMonstros[slotVazio] = { ...atacante, temporario: false, invocadoEsteTurno: true, nome: `Token ${atacante.nome}` };
+                }
+                defensor.zonaMagias[i] = null;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+// -------------------- Exportações --------------------
 window.MAPA_EFEITOS_MAGIA = MAPA_EFEITOS_MAGIA;
 window.MAPA_EFEITOS_INVOCACAO = MAPA_EFEITOS_INVOCACAO;
 window.MAPA_EFEITOS_MORTE = MAPA_EFEITOS_MORTE;
@@ -596,3 +728,5 @@ window.verificarFimDeDuelo = verificarFimDeDuelo;
 window.finalizarDuelo = finalizarDuelo;
 window.animarCarta = animarCarta;
 window.animarAtaque = animarAtaque;
+window.verificarArmadilhasInvocacao = verificarArmadilhasInvocacao;
+window.verificarArmadilhasAtaque = verificarArmadilhasAtaque;

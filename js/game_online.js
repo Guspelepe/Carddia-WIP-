@@ -1,5 +1,5 @@
 // ================================================================
-// game_online.js – Multiplayer com chat e exclusão automática
+// game_online.js – Multiplayer com botão "Iniciar Partida"
 // ================================================================
 
 console.log('🔥 game_online.js carregado!');
@@ -89,9 +89,7 @@ function montarDeck() {
         console.error('❌ ALL_CARDS não definido!');
         return [];
     }
-    // Usando todos os tiers para maior variedade
     const allCards = [...ALL_CARDS];
-    // Embaralha tudo e pega 20 cartas aleatórias
     const shuffled = embaralhar(allCards);
     return shuffled.slice(0, 20);
 }
@@ -107,7 +105,7 @@ function comprarCartaLocal(jogador) {
     return true;
 }
 
-// -------------------- Mapeamento Visual --------------------
+// -------------------- Mapeamento Visual (inversão) --------------------
 function getVisualToReal(visualId) {
     if (meuId === 1) return visualId;
     return visualId === 1 ? 2 : 1;
@@ -145,7 +143,7 @@ function inverterCampos() {
     order.forEach(el => { if (el) container.appendChild(el); });
 }
 
-// -------------------- Preview --------------------
+// -------------------- Preview da Carta --------------------
 function showPreview(carta, jogadorId) {
     const preview = document.getElementById('card-preview');
     const effectDisplay = document.getElementById('card-effect-display');
@@ -196,7 +194,7 @@ function showPreview(carta, jogadorId) {
     }
 }
 
-// -------------------- Inicialização do Jogo --------------------
+// -------------------- Inicialização do Jogo (chamada pelo botão) --------------------
 function inicializarEstadoInicial() {
     if (jogoInicializado) {
         console.log('⚠️ Jogo já inicializado.');
@@ -257,6 +255,9 @@ function inicializarEstadoInicial() {
         configurarLayoutCampos();
         render();
         renderBotoes();
+        // Esconder botão de iniciar após início
+        const container = document.getElementById('btn-iniciar-container');
+        if (container) container.innerHTML = '';
         console.log('✅ Estado inicial salvo.');
     }).catch(err => {
         console.error('❌ Erro ao salvar estado:', err);
@@ -264,7 +265,7 @@ function inicializarEstadoInicial() {
     });
 }
 
-// -------------------- Sincronização e lastActivity --------------------
+// -------------------- Sincronização --------------------
 function atualizarEstadoFirestore() {
     if (!partidaRef) return;
     partidaRef.update({
@@ -307,6 +308,8 @@ function aplicarAcaoLocal(acao) {
     switch (acao.tipo) {
         case 'INVOKE':
             window.invocarMonstro(acao.jogadorId, acao.params.maoIndex, acao.params.slot, acao.params.posicao, estado);
+            // Verificar armadilhas após invocação
+            window.verificarArmadilhasInvocacao(acao.jogadorId, acao.params.slot, estado);
             break;
         case 'BAIXAR_ARMADILHA':
             window.baixarArmadilha(acao.jogadorId, acao.params.maoIndex, acao.params.slot, estado);
@@ -331,12 +334,21 @@ function aplicarAcaoLocal(acao) {
     atualizarEstadoFirestore();
 }
 
-// ========== Funções de Batalha ==========
+// ========== Funções de Batalha (sem animação de seta) ==========
 function atacar(jogadorId, atacanteSlot, alvoTipo, alvoSlot) {
     const atacante = estado.jogadores[jogadorId].zonaMonstros[atacanteSlot];
     if (!atacante || atacante.ataquesRestantes === 0) return;
     const defensorId = jogadorId === 1 ? 2 : 1;
     const defensor = estado.jogadores[defensorId];
+
+    // Verificar armadilhas antes do ataque
+    const armadilhaAtivada = window.verificarArmadilhasAtaque(jogadorId, atacanteSlot, alvoTipo, alvoSlot, estado);
+    if (armadilhaAtivada) {
+        render();
+        renderBotoes();
+        atualizarEstadoFirestore();
+        return;
+    }
 
     let podeAtacarDireto = false;
     const temMonstrosInimigos = defensor.zonaMonstros.some(m => m !== null);
@@ -353,26 +365,32 @@ function atacar(jogadorId, atacanteSlot, alvoTipo, alvoSlot) {
         return;
     }
 
-    if (alvoTipo === 'jogador') {
-        const dano = atacante.atk + (atacante.bonusAtk || 0);
-        defensor.hp -= dano;
-        window.adicionarLog(jogadorId, `${atacante.nome} atacou diretamente! ${window.nomeJogador(defensorId)} perdeu ${dano} HP.`);
-        if (atacante.efeito === 'ao_causar_dano_oponente_descarta_1_carta' && defensor.mao.length > 0) {
-            const descartada = defensor.mao.pop();
-            window.adicionarLog(jogadorId, `${atacante.nome} descartou ${descartada.nome}.`);
+    // Animação básica de ataque (sem seta)
+    window.animarAtaque(atacanteSlot, alvoTipo === 'monstro' ? alvoSlot : null, jogadorId, defensorId).then(() => {
+        if (alvoTipo === 'jogador') {
+            const dano = atacante.atk + (atacante.bonusAtk || 0);
+            defensor.hp -= dano;
+            window.adicionarLog(jogadorId, `${atacante.nome} atacou diretamente! ${window.nomeJogador(defensorId)} perdeu ${dano} HP.`);
+            if (atacante.efeito === 'ao_causar_dano_oponente_descarta_1_carta' && defensor.mao.length > 0) {
+                const descartada = defensor.mao.pop();
+                window.adicionarLog(jogadorId, `${atacante.nome} descartou ${descartada.nome}.`);
+            }
+        } else {
+            if (!defensor.zonaMonstros[alvoSlot]) {
+                window.adicionarLog(jogadorId, 'Alvo inválido.');
+                return;
+            }
+            window.resolverBatalha(jogadorId, defensorId, atacanteSlot, alvoSlot, estado);
         }
-    } else {
-        if (!defensor.zonaMonstros[alvoSlot]) {
-            window.adicionarLog(jogadorId, 'Alvo inválido.');
-            return;
-        }
-        window.resolverBatalha(jogadorId, defensorId, atacanteSlot, alvoSlot, estado);
-    }
 
-    if (estado.jogadores[jogadorId].zonaMonstros[atacanteSlot]) {
-        estado.jogadores[jogadorId].zonaMonstros[atacanteSlot].ataquesRestantes--;
-    }
-    window.verificarFimDeDuelo(estado);
+        if (estado.jogadores[jogadorId].zonaMonstros[atacanteSlot]) {
+            estado.jogadores[jogadorId].zonaMonstros[atacanteSlot].ataquesRestantes--;
+        }
+        window.verificarFimDeDuelo(estado);
+        render();
+        renderBotoes();
+        atualizarEstadoFirestore();
+    });
 }
 
 function mudarPosicao(jogadorId, slot) {
@@ -402,6 +420,8 @@ function render() {
     renderMao();
     renderBotoes();
     configurarLayoutCampos();
+    // Mostrar botão de iniciar se necessário
+    mostrarBotaoIniciar();
 }
 
 function renderInfoJogadores() {
@@ -522,7 +542,29 @@ function renderLog() {
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// ========== CHAT ==========
+// -------------------- Botão "Iniciar Partida" --------------------
+function mostrarBotaoIniciar() {
+    const container = document.getElementById('btn-iniciar-container');
+    if (!container) return;
+
+    // Verifica se deve mostrar o botão:
+    // - Apenas para o jogador 1
+    // - Ambos os jogadores estão presentes
+    // - gameState ainda é null
+    const data = partidaRef ? null : null; // vamos obter os dados do snapshot manualmente? Melhor usar uma variável global.
+    // Para simplificar, vamos verificar no snapshot e guardar em uma variável.
+    // Vamos usar uma variável global 'ambosPresentes' que será atualizada no snapshot.
+    if (meuId === 1 && window.ambosPresentes && !estado.gameState && !jogoInicializado) {
+        container.innerHTML = `<button id="btn-iniciar-partida" class="btn btn-primary" style="padding:10px 20px; background:#27ae60; border:none; border-radius:8px; color:white; font-weight:bold; cursor:pointer; width:100%;">▶️ Iniciar Partida</button>`;
+        document.getElementById('btn-iniciar-partida')?.addEventListener('click', function() {
+            inicializarEstadoInicial();
+        });
+    } else {
+        container.innerHTML = '';
+    }
+}
+
+// -------------------- CHAT --------------------
 function carregarChat() {
     if (!partidaRef) return;
     partidaRef.onSnapshot(doc => {
@@ -531,7 +573,6 @@ function carregarChat() {
         if (data.chat) {
             const chatDiv = document.getElementById('chat-messages');
             chatDiv.innerHTML = '';
-            // Mostra as últimas 20 mensagens
             const mensagens = data.chat.slice(-20);
             mensagens.forEach(msg => {
                 const div = document.createElement('div');
@@ -574,7 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// ========== Eventos ==========
+// ========== Eventos do Jogo ==========
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📄 DOM carregado, configurando eventos...');
 
@@ -922,22 +963,26 @@ function iniciarPartida(uid) {
 
         configurarLayoutCampos();
 
-        // Se não tem gameState, inicializa (apenas se ambos estiverem presentes)
+        // Verifica se ambos os jogadores estão presentes
+        const ambosPresentes = p1 && p2;
+        window.ambosPresentes = ambosPresentes; // para o botão
+
+        // Se não tem gameState e ambos estão presentes, mostra botão para jogador 1
         if (!data.gameState) {
-            if (p1 && p2) {
-                if (!jogoInicializado) {
-                    console.log('🎮 Ambos jogadores presentes. Inicializando estado...');
-                    inicializarEstadoInicial();
-                } else {
-                    console.log('⚠️ jogoInicializado já é true, ignorando.');
+            if (ambosPresentes) {
+                // Atualiza status para 'playing' se ainda não estiver
+                if (data.status !== 'playing') {
+                    partidaRef.update({ status: 'playing', lastActivity: firebase.firestore.FieldValue.serverTimestamp() });
                 }
+                // Renderiza para mostrar o botão
+                render();
             } else {
                 window.adicionarLog(meuId, 'Aguardando oponente entrar na partida...');
             }
             return;
         }
 
-        // Atualiza estado
+        // Se já tem gameState, atualiza estado
         estado = data.gameState;
         render();
         renderLog();
