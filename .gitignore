@@ -24,3 +24,4 @@ dist/
 build/
 *.min.js
 
+.firebase/
