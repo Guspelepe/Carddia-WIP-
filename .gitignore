@@ -1,12 +1,12 @@
-# Dependências do Node
+# Dependências do Node (caso tenha instalado algo)
 node_modules/
-package-lock.json   # opcional: muitos committam, mas se quiser ignorar, mantenha
-
-# Firebase local (cache, configurações locais)
-.firebase/
+package-lock.json
+package.json  # se não quiser commitar (mas pode commitar se quiser)
 
 # Arquivos de ambiente / secrets (NUNCA commitar)
 .env
+.firebaserc
+firebase.json  # se você usou CLI do Firebase
 *.log
 
 # Arquivos do sistema
@@ -23,3 +23,4 @@ Thumbs.db
 dist/
 build/
 *.min.js
+
