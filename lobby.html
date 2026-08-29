@@ -4,184 +4,556 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Carddia - Lobby</title>
-    <link rel="stylesheet" href="css/base.css" />
-    <link rel="stylesheet" href="css/menu.css" />
-    <link rel="stylesheet" href="css/lobby.css" />
+
+    <!-- Fontes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDKs (carregados ANTES de qualquer script) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
     <style>
-        /* Estilos gerais */
-        .lobby-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        /* ========== RESET E VARIÁVEIS ========== */
+        :root {
+            --bg-primary: #0f1923;
+            --bg-secondary: #1a2a3a;
+            --bg-card: #1e2d3d;
+            --bg-sidebar: #0b141c;
+            --text-primary: #ecf0f1;
+            --text-secondary: #b0c4de;
+            --accent-color: #f1c40f;
+            --accent-hover: #f39c12;
+            --btn-primary: #27ae60;
+            --btn-primary-hover: #2ecc71;
+            --btn-secondary: #3498db;
+            --btn-secondary-hover: #2980b9;
+            --border-color: #2c3e50;
+            --shadow: 0 4px 20px rgba(0,0,0,0.5);
+            --radius: 12px;
+            --transition: 0.3s ease;
         }
-        .lobby-header {
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .user-container {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            height: 100vh;
+            width: 100%;
+        }
+
+        .sidebar-user {
+            width: 280px;
+            background: var(--bg-sidebar);
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            transition: transform 0.3s ease, width 0.3s ease;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+            position: relative;
+            z-index: 100;
+        }
+
+        .sidebar-user.collapsed {
+            transform: translateX(-100%);
+            width: 0;
+            padding: 0;
+            overflow: hidden;
+            border: none;
+        }
+
+        .user-header {
+            text-align: center;
             margin-bottom: 30px;
-            flex-wrap: wrap;
         }
-        .lobby-menu {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            justify-content: center;
-            margin: 20px 0;
-        }
-        .lobby-menu .menu-card {
-            background: #34495e;
-            padding: 20px;
-            border-radius: 16px;
-            width: 200px;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        }
-        .lobby-menu .menu-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-        }
-        .lobby-menu .menu-card .icon { font-size: 3em; margin-bottom: 10px; }
-        .lobby-menu .menu-card h3 { margin: 10px 0 5px; }
-        .lobby-menu .menu-card p { font-size: 0.9em; color: #bdc3c7; }
 
-        /* Lista de salas abertas */
-        .match-list-container { margin-top: 30px; }
-        .match-list-container h2 { border-bottom: 2px solid #7f8c8d; padding-bottom: 10px; }
-        .match-item {
-            background: #2c3e50;
-            padding: 15px 20px;
-            border-radius: 8px;
+        .logo-sidebar img {
+            max-width: 150px;
+            margin-bottom: 15px;
+        }
+
+        .avatar {
+            display: flex;
+            justify-content: center;
             margin-bottom: 10px;
+        }
+
+        .avatar img {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 3px solid var(--accent-color);
+        }
+
+        .user-name {
+            display: block;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .user-apelido {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .menu-user {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menu-user ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .menu-user ul li {
+            margin-bottom: 5px;
+        }
+
+        .menu-user ul li a {
+            display: block;
+            padding: 12px 16px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .menu-user ul li a:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .menu-user ul li a.active {
+            background: var(--bg-secondary);
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .sidebar-footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            display: block;
+            padding: 10px 16px;
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .sidebar-footer a:hover {
+            background: var(--bg-secondary);
+            color: #e74c3c;
+        }
+
+        /* ========== BOTÃO TOGGLE ========== */
+        .sidebar-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200;
+            background: var(--bg-secondary);
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            display: none;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+        }
+
+        /* ========== MAIN ========== */
+        .main-user {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 30px;
+            overflow-y: auto;
+            background: var(--bg-primary);
+        }
+
+        .topbar-user {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
         }
-        .match-item .info { display: flex; flex-direction: column; }
-        .match-item .info .status { font-size: 0.8em; color: #bdc3c7; }
 
-        /* Modais */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
-            z-index: 1000; backdrop-filter: blur(2px);
+        .topbar-user h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
         }
-        .modal-overlay.hidden { display: none; }
-        .modal-content {
-            background: #ecf0f1; color: #2c3e50; padding: 30px; border-radius: 12px;
-            min-width: 350px; max-width: 500px; width: 90%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+
+        .main-content-wrapper {
+            flex: 1;
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
         }
-        .modal-content h2, .modal-content h3 { margin-top: 0; }
-        .modal-field { margin-bottom: 15px; }
-        .modal-field label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .modal-field input, .modal-field select {
-            width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #95a5a6;
-            font-size: 1em; background: white; color: #2c3e50;
+
+        .content-left {
+            flex: 1;
+            min-width: 300px;
         }
-        .modal-field input:focus { outline: 2px solid #3498db; }
-        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-        .modal-actions button { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        .btn-primary { background: #27ae60; color: white; }
-        .btn-primary:hover { background: #2ecc71; }
-        .btn-secondary { background: #3498db; color: white; }
-        .btn-secondary:hover { background: #2980b9; }
-        .btn-danger { background: #e74c3c; color: white; }
-        .btn-danger:hover { background: #c0392b; }
-        .btn-warning { background: #f39c12; color: white; }
-        .btn-warning:hover { background: #e67e22; }
-        .btn-small { padding: 5px 12px; font-size: 0.8em; }
-        .codigo-exibido {
-            font-size: 2em;
-            font-weight: bold;
-            color: #e67e22;
-            background: #2c3e50;
-            padding: 10px 20px;
+
+        /* ========== CARDS ========== */
+        .card-user {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-user h3 {
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+
+        /* ========== BOTÕES ========== */
+        .btn-user {
+            background: var(--btn-primary);
+            border: none;
+            color: white;
+            padding: 12px 24px;
             border-radius: 8px;
-            text-align: center;
-            letter-spacing: 4px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* Cartas */
-        .modal-cards .card-grid {
+        .btn-user:hover {
+            background: var(--btn-primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
+        }
+
+        .btn-user.secundario {
+            background: var(--btn-secondary);
+        }
+
+        .btn-user.secundario:hover {
+            background: var(--btn-secondary-hover);
+            box-shadow: 0 6px 16px rgba(52, 152, 219, 0.3);
+        }
+
+        .btn-user.danger {
+            background: #e74c3c;
+        }
+
+        .btn-user.danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-user.pequeno {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        /* ========== LISTA DE SALAS ========== */
+        .match-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .match-item {
+            background: var(--bg-secondary);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .match-item .info .status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-msg {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* ========== COLEÇÃO ========== */
+        .collection-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 10px;
             max-height: 500px;
             overflow-y: auto;
-            padding: 10px 0;
         }
-        .modal-cards .card-item {
-            background: white;
-            color: #2c3e50;
+
+        .collection-card {
+            background: var(--bg-secondary);
             border-radius: 8px;
-            padding: 8px;
+            padding: 12px;
             text-align: center;
-            font-size: 0.8em;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
         }
-        .modal-cards .card-item .card-name { font-weight: bold; }
-        .modal-cards .card-item .card-type { font-size: 0.7em; color: #7f8c8d; }
-        .modal-cards .card-item .card-stats { font-size: 0.8em; }
+
+        .collection-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .collection-img-placeholder {
+            font-size: 2.5rem;
+            margin-bottom: 6px;
+        }
+
+        .collection-info .card-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .collection-info .card-type {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .collection-info .card-stats {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .collection-info .card-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        /* ========== MODAIS ========== */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.hidden { display: none; }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 30px;
+            border-radius: var(--radius);
+            min-width: 350px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-content h2, .modal-content h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+        }
+
+        .modal-field {
+            margin-bottom: 15px;
+        }
+
+        .modal-field label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .modal-field input,
+        .modal-field select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .modal-field input:focus,
+        .modal-field select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.2);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-modal-primary { background: var(--btn-primary); color: white; }
+        .btn-modal-primary:hover { background: var(--btn-primary-hover); }
+
+        .btn-modal-secondary { background: var(--btn-secondary); color: white; }
+        .btn-modal-secondary:hover { background: var(--btn-secondary-hover); }
+
+        .btn-modal-danger { background: #e74c3c; color: white; }
+        .btn-modal-danger:hover { background: #c0392b; }
+
+        /* ========== RESPONSIVO ========== */
+        @media (max-width: 992px) {
+            .sidebar-user {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                transform: translateX(-100%);
+                width: 280px;
+                z-index: 300;
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar-user.collapsed {
+                transform: translateX(-100%);
+            }
+
+            .sidebar-user:not(.collapsed) {
+                transform: translateX(0);
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .main-user {
+                padding: 15px;
+            }
+
+            .topbar-user h1 {
+                font-size: 1.4rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .modal-content {
+                min-width: unset;
+                padding: 20px;
+            }
+
+            .btn-user {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .match-item {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="lobby-container">
-        <div class="lobby-header">
-            <h1>🏟️ Carddia</h1>
-            <div>
-                <span id="user-nick-display" style="margin-right: 15px;"></span>
-                <button class="btn btn-danger" onclick="logout()">Sair</button>
-            </div>
-        </div>
+    <div class="user-container">
+        <!-- BOTÃO TOGGLE -->
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir/fechar menu">☰</button>
 
-        <!-- Menu Principal -->
-        <div class="lobby-menu">
-            <div class="menu-card" onclick="abrirModalIA()">
-                <div class="icon">🤖</div>
-                <h3>Vs. IA</h3>
-                <p>Desafie o computador</p>
+        <!-- SIDEBAR -->
+        <aside class="sidebar-user" id="sidebar-user">
+            <div class="user-header">
+                <div class="logo-sidebar">
+                    <img src="img/logo.png" alt="Carddia">
+                </div>
+                <div class="avatar">
+                    <img id="user-avatar" src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiNlZWUiLz48Y2lyY2xlIGN4PSI1MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iI2NjYyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iODUiIHI9IjMwIiBmaWxsPSIjY2NjIi8+PC9zdmc+" alt="Avatar">
+                </div>
+                <span class="user-name" id="user-nick-display">Carregando...</span>
+                <span class="user-apelido">Jogador</span>
             </div>
-            <div class="menu-card" onclick="matchmaking()">
-                <div class="icon">⚔️</div>
-                <h3>Matchmaking</h3>
-                <p>Encontre um oponente aleatório</p>
-            </div>
-            <div class="menu-card" onclick="abrirModalCriarSala()">
-                <div class="icon">🔑</div>
-                <h3>Criar Sala com Código</h3>
-                <p>Crie uma sala privada</p>
-            </div>
-            <div class="menu-card" onclick="abrirModalEntrarSala()">
-                <div class="icon">🚪</div>
-                <h3>Entrar com Código</h3>
-                <p>Use o código da sala</p>
-            </div>
-            <div class="menu-card" onclick="verCartas()">
-                <div class="icon">📜</div>
-                <h3>Ver Cartas</h3>
-                <p>Veja todas as cartas</p>
-            </div>
-        </div>
 
-        <!-- Salas Abertas (Lobby) -->
-        <div class="match-list-container">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>🏛️ Salas Abertas</h2>
-                <button class="btn btn-primary" onclick="criarSalaAberta()">+ Criar Sala Aberta</button>
-            </div>
-            <ul id="match-list" class="match-list">
-                <li class="empty-msg">Carregando salas abertas...</li>
-            </ul>
-        </div>
+            <nav class="menu-user">
+                <ul>
+                    <li><a href="#" data-section="jogar" class="active">Jogar Agora</a></li>
+                    <li><a href="#" data-section="treino">Modo Treino</a></li>
+                    <li><a href="#" data-section="colecao">Coleção</a></li>
+                </ul>
+                <div class="sidebar-footer">
+                    <a href="#" id="logout-user" style="color: #e74c3c;">Sair</a>
+                </div>
+            </nav>
+        </aside>
 
-        <div id="error-display" class="error-msg" style="display:none;"></div>
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-user" id="main-user">
+            <header class="topbar-user">
+                <h1 id="section-title-user">Jogar Agora</h1>
+                <div class="topbar-actions-user"></div>
+            </header>
+
+            <div class="main-content-wrapper">
+                <div class="content-left" id="content-left">
+                    <!-- O conteúdo será renderizado dinamicamente pelo script -->
+                </div>
+            </div>
+        </main>
     </div>
 
+    <!-- ========== MODAIS ========== -->
     <!-- Modal IA -->
     <div id="modal-ia" class="modal-overlay hidden">
         <div class="modal-content">
@@ -203,8 +575,8 @@
                 </select>
             </div>
             <div class="modal-actions">
-                <button class="btn-secondary" onclick="fecharModal('modal-ia')">Cancelar</button>
-                <button class="btn-primary" onclick="iniciarIA()">Iniciar</button>
+                <button class="btn-modal-secondary" onclick="fecharModal('modal-ia')">Cancelar</button>
+                <button class="btn-modal-primary" onclick="iniciarIA()">Iniciar</button>
             </div>
         </div>
     </div>
@@ -226,8 +598,8 @@
                 <input type="text" id="modal-criar-senha" placeholder="Deixe em branco para sem senha" maxlength="6" />
             </div>
             <div class="modal-actions">
-                <button class="btn-secondary" onclick="fecharModal('modal-criar-sala')">Cancelar</button>
-                <button class="btn-primary" onclick="criarSalaComCodigo()">Criar Sala</button>
+                <button class="btn-modal-secondary" onclick="fecharModal('modal-criar-sala')">Cancelar</button>
+                <button class="btn-modal-primary" onclick="criarSalaComCodigo()">Criar Sala</button>
             </div>
         </div>
     </div>
@@ -245,8 +617,8 @@
                 <input type="text" id="modal-entrar-senha" placeholder="Senha" />
             </div>
             <div class="modal-actions">
-                <button class="btn-secondary" onclick="fecharModal('modal-entrar-sala')">Cancelar</button>
-                <button class="btn-primary" onclick="entrarPorCodigo()">Entrar</button>
+                <button class="btn-modal-secondary" onclick="fecharModal('modal-entrar-sala')">Cancelar</button>
+                <button class="btn-modal-primary" onclick="entrarPorCodigo()">Entrar</button>
             </div>
         </div>
     </div>
@@ -255,449 +627,608 @@
     <div id="modal-cartas" class="modal-overlay hidden modal-cards">
         <div class="modal-content" style="width: 80%; max-width: 900px;">
             <h2>📜 Todas as Cartas</h2>
-            <div id="card-grid" class="card-grid"></div>
+            <div id="card-grid" class="collection-grid"></div>
             <div class="modal-actions">
-                <button class="btn-secondary" onclick="fecharModal('modal-cartas')">Fechar</button>
+                <button class="btn-modal-secondary" onclick="fecharModal('modal-cartas')">Fechar</button>
             </div>
         </div>
     </div>
 
+    <!-- ========== SCRIPTS ========== -->
+    <script src="js/cards.js"></script>
+
     <script>
-        // ========== CONFIGURAÇÃO FIREBASE ==========
-        const firebaseConfig = {
-            apiKey: "AIzaSyCBAjjFzRPB013mCC5mVGs-rojDla9uChk",
-            authDomain: "carddia-card-game.firebaseapp.com",
-            projectId: "carddia-card-game",
-            storageBucket: "carddia-card-game.firebasestorage.app",
-            messagingSenderId: "934272406141",
-            appId: "1:934272406141:web:204496eb4f51045df15714"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        // Aguarda TODOS os recursos (incluindo SDKs externos)
+        window.addEventListener('load', function() {
+            console.log('🚀 Página completamente carregada, verificando Firebase...');
 
-        let currentUser = null;
-        let currentNick = '';
-        let isReady = false;
-        let unsubscribeList = null;
+            // Função para inicializar o lobby
+            function iniciarLobby() {
+                // ============================================================
+                // 1. CONFIGURAÇÃO FIREBASE
+                // ============================================================
+                const firebaseConfig = {
+                    apiKey: "AIzaSyCBAjjFzRPB013mCC5mVGs-rojDla9uChk",
+                    authDomain: "carddia-card-game.firebaseapp.com",
+                    projectId: "carddia-card-game",
+                    storageBucket: "carddia-card-game.firebasestorage.app",
+                    messagingSenderId: "934272406141",
+                    appId: "1:934272406141:web:204496eb4f51045df15714"
+                };
 
-        // ========== AUTENTICAÇÃO ==========
-        auth.onAuthStateChanged(user => {
-            if (!user) {
-                window.location.href = 'index.html';
-                return;
-            }
-            currentUser = user;
-            db.collection('users').doc(user.uid).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        currentNick = doc.data().nickname || 'Jogador';
-                    } else {
-                        currentNick = 'Jogador';
-                    }
-                    document.getElementById('user-nick-display').textContent = '👤 ' + currentNick;
-                    isReady = true;
-                    limparSalasAntigas();
-                    listenSalasAbertas();
-                })
-                .catch(err => {
-                    console.error('Erro ao buscar nickname:', err);
-                    currentNick = 'Jogador';
-                    document.getElementById('user-nick-display').textContent = '👤 ' + currentNick;
-                    isReady = true;
-                    limparSalasAntigas();
-                    listenSalasAbertas();
-                });
-        });
-
-        // ========== FUNÇÕES DE MODAL ==========
-        function abrirModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        // ========== IA ==========
-        function abrirModalIA() { abrirModal('modal-ia'); }
-        function iniciarIA() {
-            const diff = document.getElementById('modal-dificuldade').value;
-            const bestof = document.getElementById('modal-melhor').value;
-            window.location.href = `game_ai.html?nick=${encodeURIComponent(currentNick)}&diff=${diff}&bestof=${bestof}`;
-        }
-
-        // ========== MATCHMAKING ==========
-        let unsubscribeQueue = null;
-        function matchmaking() {
-            if (!isReady || !currentUser) {
-                alert('Aguarde o carregamento do perfil.');
-                return;
-            }
-            const queueRef = db.collection('queue').doc(currentUser.uid);
-            queueRef.set({
-                uid: currentUser.uid,
-                nick: currentNick,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                alert('Você entrou na fila. Aguardando oponente...');
-                if (unsubscribeQueue) unsubscribeQueue();
-                const qRef = db.collection('queue').orderBy('timestamp', 'asc').limit(2);
-                unsubscribeQueue = qRef.onSnapshot(snapshot => {
-                    if (snapshot.size >= 2) {
-                        const docs = snapshot.docs;
-                        const p1 = docs[0].data();
-                        const p2 = docs[1].data();
-                        if (p1.uid === currentUser.uid || p2.uid === currentUser.uid) {
-                            // Criar sala automática
-                            const matchRef = db.collection('matches').doc();
-                            const matchData = {
-                                status: 'waiting',
-                                tipo: 'matchmaking',
-                                players: {
-                                    player1: { uid: p1.uid, nick: p1.nick },
-                                    player2: { uid: p2.uid, nick: p2.nick }
-                                },
-                                gameState: null,
-                                actions: [],
-                                currentTurn: 1,
-                                melhorDe: 3,
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
-                                chat: []
-                            };
-                            matchRef.set(matchData).then(() => {
-                                // Remover da fila
-                                db.collection('queue').doc(p1.uid).delete();
-                                db.collection('queue').doc(p2.uid).delete();
-                                if (unsubscribeQueue) unsubscribeQueue();
-                                window.location.href = `game_online.html?matchId=${matchRef.id}`;
-                            });
-                        }
-                    }
-                }, err => {
-                    console.error('Erro na fila:', err);
-                });
-            }).catch(err => {
-                alert('Erro ao entrar na fila: ' + err.message);
-            });
-        }
-
-        // ========== SALAS COM CÓDIGO ==========
-        function abrirModalCriarSala() { abrirModal('modal-criar-sala'); }
-        function abrirModalEntrarSala() { abrirModal('modal-entrar-sala'); }
-
-        // Gerar código de 4 caracteres (2 letras + 2 números)
-        function gerarCodigo() {
-            const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            const numeros = '0123456789';
-            let codigo = '';
-            for (let i = 0; i < 2; i++) codigo += letras[Math.floor(Math.random() * letras.length)];
-            for (let i = 0; i < 2; i++) codigo += numeros[Math.floor(Math.random() * numeros.length)];
-            // Embaralhar para misturar letras e números
-            return codigo.split('').sort(() => Math.random() - 0.5).join('');
-        }
-
-        // Verificar se o código já existe
-        async function codigoUnico(codigo) {
-            const snapshot = await db.collection('matches').where('codigo', '==', codigo).get();
-            return snapshot.empty;
-        }
-
-        async function criarSalaComCodigo() {
-            if (!isReady || !currentUser) {
-                alert('Aguarde o carregamento do perfil.');
-                return;
-            }
-            const melhorDe = parseInt(document.getElementById('modal-criar-melhor').value);
-            const senha = document.getElementById('modal-criar-senha').value.trim() || null;
-
-            // Gerar código único
-            let codigo = gerarCodigo();
-            let tentativas = 0;
-            while (!await codigoUnico(codigo) && tentativas < 20) {
-                codigo = gerarCodigo();
-                tentativas++;
-            }
-            if (tentativas >= 20) {
-                alert('Erro ao gerar código único. Tente novamente.');
-                return;
-            }
-
-            const matchRef = db.collection('matches').doc(codigo);
-            const matchData = {
-                codigo: codigo,
-                status: 'waiting',
-                tipo: 'privada',
-                senha: senha,
-                melhorDe: melhorDe,
-                players: {
-                    player1: { uid: currentUser.uid, nick: currentNick },
-                    player2: null
-                },
-                gameState: null,
-                actions: [],
-                currentTurn: 1,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
-                chat: []
-            };
-            try {
-                await matchRef.set(matchData);
-                alert(`Sala criada! Código: ${codigo}${senha ? ` | Senha: ${senha}` : ''}`);
-                fecharModal('modal-criar-sala');
-                window.location.href = `game_online.html?matchId=${codigo}`;
-            } catch (err) {
-                alert('Erro ao criar sala: ' + err.message);
-            }
-        }
-
-        async function entrarPorCodigo() {
-            const codigo = document.getElementById('modal-entrar-codigo').value.trim().toUpperCase();
-            const senha = document.getElementById('modal-entrar-senha').value.trim() || null;
-            if (!codigo) {
-                alert('Digite o código.');
-                return;
-            }
-            if (!isReady || !currentUser) {
-                alert('Aguarde o carregamento do perfil.');
-                return;
-            }
-            try {
-                const doc = await db.collection('matches').doc(codigo).get();
-                if (!doc.exists) {
-                    alert('Sala não encontrada.');
+                if (typeof firebase === 'undefined') {
+                    console.warn('⏳ Firebase ainda não carregado, tentando novamente em 500ms...');
+                    setTimeout(iniciarLobby, 500);
                     return;
                 }
-                const data = doc.data();
-                if (data.status === 'playing' || data.status === 'fim') {
-                    alert('Sala já está em andamento ou finalizada.');
-                    return;
-                }
-                // Verificar senha
-                if (data.senha && data.senha !== senha) {
-                    alert('Senha incorreta.');
-                    return;
-                }
-                // Verificar se já tem 2 jogadores
-                if (data.players.player2 !== null) {
-                    alert('Sala cheia.');
-                    return;
-                }
-                // Entrar
-                await doc.ref.update({
-                    'players.player2': { uid: currentUser.uid, nick: currentNick },
-                    status: 'playing',
-                    lastActivity: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                fecharModal('modal-entrar-sala');
-                window.location.href = `game_online.html?matchId=${codigo}`;
-            } catch (err) {
-                alert('Erro ao entrar: ' + err.message);
-            }
-        }
 
-        // ========== SALAS ABERTAS (LOBBY) ==========
-        function criarSalaAberta() {
-            if (!isReady || !currentUser) {
-                alert('Aguarde o carregamento do perfil.');
-                return;
-            }
-            const matchRef = db.collection('matches').doc();
-            const matchData = {
-                status: 'waiting',
-                tipo: 'aberta',
-                melhorDe: 3,
-                players: {
-                    player1: { uid: currentUser.uid, nick: currentNick },
-                    player2: null
-                },
-                gameState: null,
-                actions: [],
-                currentTurn: 1,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
-                chat: []
-            };
-            matchRef.set(matchData)
-                .then(() => {
-                    alert('Sala aberta criada!');
-                    window.location.href = `game_online.html?matchId=${matchRef.id}`;
-                })
-                .catch(err => {
-                    alert('Erro ao criar sala: ' + err.message);
-                });
-        }
+                // Se chegou aqui, Firebase está disponível
+                firebase.initializeApp(firebaseConfig);
+                const auth = firebase.auth();
+                const db = firebase.firestore();
+                console.log('✅ Firebase inicializado!');
 
-        function listenSalasAbertas() {
-            if (unsubscribeList) unsubscribeList();
-            const list = document.getElementById('match-list');
-            unsubscribeList = db.collection('matches')
-                .where('status', 'in', ['waiting'])
-                .where('tipo', '==', 'aberta')
-                .orderBy('createdAt', 'desc')
-                .onSnapshot(snapshot => {
-                    if (snapshot.empty) {
-                        list.innerHTML = '<li class="empty-msg">Nenhuma sala aberta. Crie uma!</li>';
+                let currentUser = null;
+                let currentNick = '';
+                let isReady = false;
+                let unsubscribeList = null;
+                let unsubscribeQueue = null;
+
+                // ============================================================
+                // 2. AUTENTICAÇÃO
+                // ============================================================
+                auth.onAuthStateChanged(user => {
+                    if (!user) {
+                        window.location.href = 'index.html';
                         return;
                     }
-                    let html = '';
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        const player1 = data.players.player1;
-                        const player2 = data.players.player2;
-                        const isFull = player2 !== null;
-                        const isCreator = currentUser && player1 && player1.uid === currentUser.uid;
-                        const isPlayer2 = currentUser && player2 && player2.uid === currentUser.uid;
-
-                        let actionHtml = '';
-                        if (!isFull) {
-                            if (!isCreator && !isPlayer2) {
-                                actionHtml = `<button class="btn btn-primary btn-small" onclick="entrarSalaAberta('${doc.id}')">Entrar</button>`;
-                            } else {
-                                actionHtml = `<span style="color:#f1c40f;">Aguardando oponente...</span>`;
-                            }
-                        } else {
-                            actionHtml = `<span style="color:#e74c3c;">Cheia</span>`;
-                        }
-
-                        const player1Nick = player1 ? player1.nick : '?';
-                        const player2Nick = player2 ? player2.nick : 'Aguardando...';
-                        const idade = data.lastActivity ? Math.round((Date.now() - (data.lastActivity.toDate ? data.lastActivity.toDate().getTime() : 0)) / 60000) : '?';
-                        html += `
-                            <li class="match-item">
-                                <div class="info">
-                                    <span><strong>${player1Nick}</strong> vs <strong>${player2Nick}</strong></span>
-                                    <span class="status">🟢 Aguardando - ${idade}m atrás</span>
-                                </div>
-                                <div>${actionHtml}</div>
-                            </li>
-                        `;
-                    });
-                    list.innerHTML = html;
-                }, error => {
-                    console.error('Erro no listener:', error);
-                    document.getElementById('error-display').textContent = 'Erro ao carregar salas: ' + error.message;
-                    document.getElementById('error-display').style.display = 'block';
+                    currentUser = user;
+                    db.collection('users').doc(user.uid).get()
+                        .then(doc => {
+                            currentNick = doc.exists ? (doc.data().nickname || 'Jogador') : 'Jogador';
+                            document.getElementById('user-nick-display').textContent = currentNick;
+                            isReady = true;
+                            limparSalasAntigas();
+                            listenSalasAbertas();
+                        })
+                        .catch(err => {
+                            currentNick = 'Jogador';
+                            document.getElementById('user-nick-display').textContent = currentNick;
+                            isReady = true;
+                            limparSalasAntigas();
+                            listenSalasAbertas();
+                        });
                 });
-        }
 
-        function entrarSalaAberta(matchId) {
-            if (!currentUser) {
-                alert('Você não está logado.');
-                return;
-            }
-            const matchRef = db.collection('matches').doc(matchId);
-            db.runTransaction(transaction => {
-                return transaction.get(matchRef)
-                    .then(doc => {
-                        const data = doc.data();
-                        if (!data || data.status !== 'waiting' || data.players.player2 !== null) {
-                            throw new Error('Sala não disponível.');
+                // ============================================================
+                // 3. FUNÇÕES DE MODAL
+                // ============================================================
+                function abrirModal(id) {
+                    document.getElementById(id).classList.remove('hidden');
+                }
+                function fecharModal(id) {
+                    document.getElementById(id).classList.add('hidden');
+                }
+                window.fecharModal = fecharModal;
+
+                // ============================================================
+                // 4. NAVEGAÇÃO ENTRE SEÇÕES
+                // ============================================================
+                const menuLinks = document.querySelectorAll('.menu-user a[data-section]');
+                const sectionTitle = document.getElementById('section-title-user');
+                const contentLeft = document.getElementById('content-left');
+
+                const titlesMap = {
+                    'jogar': 'Jogar Agora',
+                    'treino': 'Modo Treino',
+                    'colecao': 'Coleção'
+                };
+
+                function renderJogar() {
+                    contentLeft.innerHTML = `
+                        <div class="card-user" style="text-align: center; padding: 30px;">
+                            <h3 style="margin-bottom: 20px;">Entre em uma partida ou crie a sua!</h3>
+                            <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                                <button class="btn-user" onclick="window.matchmaking()" style="padding: 15px 30px; font-size: 1.1rem;">⚔️ Encontrar Oponente</button>
+                                <button class="btn-user secundario" onclick="window.abrirModalCriarSala()" style="padding: 15px 30px; font-size: 1.1rem;">🔑 Criar Sala</button>
+                                <button class="btn-user secundario" onclick="window.abrirModalEntrarSala()" style="padding: 15px 30px; font-size: 1.1rem;">🚪 Entrar com Código</button>
+                            </div>
+                        </div>
+
+                        <div class="card-user">
+                            <h3>🏛️ Salas Abertas</h3>
+                            <ul id="match-list" class="match-list">
+                                <li class="empty-msg">Carregando salas abertas...</li>
+                            </ul>
+                        </div>
+                    `;
+                }
+
+                function renderTreino() {
+                    contentLeft.innerHTML = `
+                        <div class="card-user" style="text-align: center; padding: 40px; background: linear-gradient(135deg, #1a2a3a, #2c3e50);">
+                            <h2 style="margin-bottom: 10px; color: var(--accent-color);">🤖 Modo Treino</h2>
+                            <p style="color: var(--text-secondary); margin-bottom: 30px;">Pratique contra a Inteligência Artificial do Carddia. Escolha a dificuldade e o formato da partida.</p>
+                            <button class="btn-user" onclick="window.abrirModalIA()" style="padding: 15px 40px; font-size: 1.2rem;">Iniciar Treino</button>
+                        </div>
+                    `;
+                }
+
+                function renderColecao() {
+                    contentLeft.innerHTML = `
+                        <div class="card-user">
+                            <h3>📜 Coleção de Cartas</h3>
+                            <p style="color: var(--text-secondary);">Aqui estão todas as cartas disponíveis no Carddia. Em breve, imagens ilustradas!</p>
+                            <div id="collection-grid" class="collection-grid"></div>
+                        </div>
+                    `;
+
+                    const grid = document.getElementById('collection-grid');
+                    if (grid) {
+                        grid.innerHTML = '';
+                        if (typeof ALL_CARDS !== 'undefined' && ALL_CARDS.length) {
+                            ALL_CARDS.forEach(carta => {
+                                const cardDiv = document.createElement('div');
+                                cardDiv.className = 'collection-card';
+                                let html = `<div class="collection-img-placeholder">🃏</div>`;
+                                html += `<div class="collection-info">`;
+                                html += `<div class="card-name">${carta.nome}</div>`;
+                                html += `<div class="card-type">${carta.tipo}</div>`;
+                                if (carta.tipo === 'monstro') {
+                                    html += `<div class="card-stats">ATK ${carta.atk} | DEF ${carta.def}</div>`;
+                                }
+                                if (carta.descricao) {
+                                    html += `<div class="card-desc">${carta.descricao}</div>`;
+                                }
+                                html += `</div>`;
+                                cardDiv.innerHTML = html;
+                                grid.appendChild(cardDiv);
+                            });
+                        } else {
+                            grid.innerHTML = '<p class="empty-msg">Nenhuma carta disponível.</p>';
                         }
-                        transaction.update(matchRef, {
+                    }
+                }
+
+                menuLinks.forEach(link => {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const section = this.getAttribute('data-section');
+                        sectionTitle.textContent = titlesMap[section] || section;
+                        menuLinks.forEach(l => l.classList.remove('active'));
+                        this.classList.add('active');
+
+                        if (section === 'jogar') renderJogar();
+                        else if (section === 'treino') renderTreino();
+                        else if (section === 'colecao') renderColecao();
+                    });
+                });
+
+                // ============================================================
+                // 5. CONTROLE DA SIDEBAR
+                // ============================================================
+                const sidebar = document.getElementById('sidebar-user');
+                const toggleBtn = document.getElementById('sidebar-toggle');
+                let sidebarAberta = false;
+
+                function atualizarSidebar(abrir) {
+                    sidebarAberta = abrir;
+                    if (abrir) {
+                        sidebar.classList.remove('collapsed');
+                        toggleBtn.style.display = 'none';
+                    } else {
+                        sidebar.classList.add('collapsed');
+                        toggleBtn.style.display = 'block';
+                    }
+                }
+
+                if (window.innerWidth > 992) {
+                    atualizarSidebar(true);
+                } else {
+                    atualizarSidebar(false);
+                }
+
+                toggleBtn.addEventListener('click', () => {
+                    atualizarSidebar(!sidebarAberta);
+                });
+
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth > 992) {
+                        if (!sidebarAberta) atualizarSidebar(true);
+                    } else {
+                        if (sidebarAberta) atualizarSidebar(false);
+                    }
+                });
+
+                // ============================================================
+                // 6. LOGOUT
+                // ============================================================
+                document.getElementById('logout-user').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    auth.signOut().then(() => {
+                        window.location.href = 'index.html';
+                    });
+                });
+
+                // ============================================================
+                // 7. FUNÇÕES DO JOGO
+                // ============================================================
+
+                // --- 7.1 IA ---
+                function abrirModalIA() { abrirModal('modal-ia'); }
+                function iniciarIA() {
+                    const diff = document.getElementById('modal-dificuldade').value;
+                    const bestof = document.getElementById('modal-melhor').value;
+                    window.location.href = `game_ai.html?nick=${encodeURIComponent(currentNick)}&diff=${diff}&bestof=${bestof}`;
+                }
+
+                // --- 7.2 Matchmaking ---
+                function matchmaking() {
+                    if (!isReady || !currentUser) {
+                        alert('Aguarde o carregamento do perfil.');
+                        return;
+                    }
+                    const queueRef = db.collection('queue').doc(currentUser.uid);
+                    queueRef.set({
+                        uid: currentUser.uid,
+                        nick: currentNick,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        alert('Você entrou na fila. Aguardando oponente...');
+                        if (unsubscribeQueue) unsubscribeQueue();
+                        const qRef = db.collection('queue').orderBy('timestamp', 'asc').limit(2);
+                        unsubscribeQueue = qRef.onSnapshot(snapshot => {
+                            if (snapshot.size >= 2) {
+                                const docs = snapshot.docs;
+                                const p1 = docs[0].data();
+                                const p2 = docs[1].data();
+                                if (p1.uid === currentUser.uid || p2.uid === currentUser.uid) {
+                                    const matchRef = db.collection('matches').doc();
+                                    const matchData = {
+                                        status: 'waiting',
+                                        tipo: 'matchmaking',
+                                        players: {
+                                            player1: { uid: p1.uid, nick: p1.nick },
+                                            player2: { uid: p2.uid, nick: p2.nick }
+                                        },
+                                        gameState: null,
+                                        actions: [],
+                                        currentTurn: 1,
+                                        melhorDe: 3,
+                                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                                        lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                                        chat: []
+                                    };
+                                    matchRef.set(matchData).then(() => {
+                                        db.collection('queue').doc(p1.uid).delete();
+                                        db.collection('queue').doc(p2.uid).delete();
+                                        if (unsubscribeQueue) unsubscribeQueue();
+                                        window.location.href = `game_online.html?matchId=${matchRef.id}`;
+                                    });
+                                }
+                            }
+                        }, err => {
+                            console.error('Erro na fila:', err);
+                        });
+                    }).catch(err => {
+                        alert('Erro ao entrar na fila: ' + err.message);
+                    });
+                }
+
+                // --- 7.3 Salas com Código ---
+                function abrirModalCriarSala() { abrirModal('modal-criar-sala'); }
+                function abrirModalEntrarSala() { abrirModal('modal-entrar-sala'); }
+
+                function gerarCodigo() {
+                    const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    const numeros = '0123456789';
+                    let codigo = '';
+                    for (let i = 0; i < 2; i++) codigo += letras[Math.floor(Math.random() * letras.length)];
+                    for (let i = 0; i < 2; i++) codigo += numeros[Math.floor(Math.random() * numeros.length)];
+                    return codigo.split('').sort(() => Math.random() - 0.5).join('');
+                }
+
+                async function codigoUnico(codigo) {
+                    const snapshot = await db.collection('matches').where('codigo', '==', codigo).get();
+                    return snapshot.empty;
+                }
+
+                async function criarSalaComCodigo() {
+                    if (!isReady || !currentUser) {
+                        alert('Aguarde o carregamento do perfil.');
+                        return;
+                    }
+                    const melhorDe = parseInt(document.getElementById('modal-criar-melhor').value);
+                    const senha = document.getElementById('modal-criar-senha').value.trim() || null;
+
+                    let codigo = gerarCodigo();
+                    let tentativas = 0;
+                    while (!await codigoUnico(codigo) && tentativas < 20) {
+                        codigo = gerarCodigo();
+                        tentativas++;
+                    }
+                    if (tentativas >= 20) {
+                        alert('Erro ao gerar código único. Tente novamente.');
+                        return;
+                    }
+
+                    const matchRef = db.collection('matches').doc(codigo);
+                    const matchData = {
+                        codigo: codigo,
+                        status: 'waiting',
+                        tipo: 'privada',
+                        senha: senha,
+                        melhorDe: melhorDe,
+                        players: {
+                            player1: { uid: currentUser.uid, nick: currentNick },
+                            player2: null
+                        },
+                        gameState: null,
+                        actions: [],
+                        currentTurn: 1,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                        chat: []
+                    };
+                    try {
+                        await matchRef.set(matchData);
+                        alert(`Sala criada! Código: ${codigo}${senha ? ` | Senha: ${senha}` : ''}`);
+                        fecharModal('modal-criar-sala');
+                        window.location.href = `game_online.html?matchId=${codigo}`;
+                    } catch (err) {
+                        alert('Erro ao criar sala: ' + err.message);
+                    }
+                }
+
+                async function entrarPorCodigo() {
+                    const codigo = document.getElementById('modal-entrar-codigo').value.trim().toUpperCase();
+                    const senha = document.getElementById('modal-entrar-senha').value.trim() || null;
+                    if (!codigo) {
+                        alert('Digite o código.');
+                        return;
+                    }
+                    if (!isReady || !currentUser) {
+                        alert('Aguarde o carregamento do perfil.');
+                        return;
+                    }
+                    try {
+                        const doc = await db.collection('matches').doc(codigo).get();
+                        if (!doc.exists) {
+                            alert('Sala não encontrada.');
+                            return;
+                        }
+                        const data = doc.data();
+                        if (data.status === 'playing' || data.status === 'fim') {
+                            alert('Sala já está em andamento ou finalizada.');
+                            return;
+                        }
+                        if (data.senha && data.senha !== senha) {
+                            alert('Senha incorreta.');
+                            return;
+                        }
+                        if (data.players.player2 !== null) {
+                            alert('Sala cheia.');
+                            return;
+                        }
+                        await doc.ref.update({
                             'players.player2': { uid: currentUser.uid, nick: currentNick },
                             status: 'playing',
                             lastActivity: firebase.firestore.FieldValue.serverTimestamp()
                         });
-                    });
-            })
-            .then(() => {
-                window.location.href = `game_online.html?matchId=${matchId}`;
-            })
-            .catch(err => {
-                alert('Erro ao entrar: ' + err.message);
-                console.error(err);
-            });
-        }
-
-        // ========== VER CARTAS ==========
-        function verCartas() {
-            const modal = document.getElementById('modal-cartas');
-            const grid = document.getElementById('card-grid');
-            grid.innerHTML = '';
-            if (typeof ALL_CARDS !== 'undefined' && ALL_CARDS.length) {
-                ALL_CARDS.forEach(carta => {
-                    const div = document.createElement('div');
-                    div.className = 'card-item';
-                    let html = `<div class="card-name">${carta.nome}</div>`;
-                    html += `<div class="card-type">${carta.tipo}</div>`;
-                    if (carta.tipo === 'monstro') {
-                        html += `<div class="card-stats">ATK ${carta.atk} | DEF ${carta.def}</div>`;
+                        fecharModal('modal-entrar-sala');
+                        window.location.href = `game_online.html?matchId=${codigo}`;
+                    } catch (err) {
+                        alert('Erro ao entrar: ' + err.message);
                     }
-                    if (carta.efeito) {
-                        html += `<div style="font-size:0.7em;color:#7f8c8d;">${carta.efeito}</div>`;
-                    }
-                    div.innerHTML = html;
-                    grid.appendChild(div);
-                });
-            } else {
-                grid.innerHTML = '<p>Nenhuma carta encontrada.</p>';
-            }
-            abrirModal('modal-cartas');
-        }
+                }
 
-        // ========== UTILITÁRIOS ==========
-        function limparSalasAntigas() {
-            const limite = 30 * 60 * 1000;
-            const agora = Date.now();
-            db.collection('matches')
-                .where('status', 'in', ['waiting', 'playing'])
-                .get()
-                .then(snapshot => {
-                    const batch = db.batch();
-                    let deletados = 0;
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        let timestamp = data.lastActivity || data.createdAt;
-                        if (timestamp) {
-                            const ts = timestamp.toDate ? timestamp.toDate().getTime() : timestamp;
-                            const idade = agora - ts;
-                            if (idade > limite) {
-                                batch.delete(doc.ref);
-                                deletados++;
+                // --- 7.4 Salas Abertas ---
+                function criarSalaAberta() {
+                    if (!isReady || !currentUser) {
+                        alert('Aguarde o carregamento do perfil.');
+                        return;
+                    }
+                    const matchRef = db.collection('matches').doc();
+                    const matchData = {
+                        status: 'waiting',
+                        tipo: 'aberta',
+                        melhorDe: 3,
+                        players: {
+                            player1: { uid: currentUser.uid, nick: currentNick },
+                            player2: null
+                        },
+                        gameState: null,
+                        actions: [],
+                        currentTurn: 1,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastActivity: firebase.firestore.FieldValue.serverTimestamp(),
+                        chat: []
+                    };
+                    matchRef.set(matchData)
+                        .then(() => {
+                            alert('Sala aberta criada!');
+                            window.location.href = `game_online.html?matchId=${matchRef.id}`;
+                        })
+                        .catch(err => {
+                            alert('Erro ao criar sala: ' + err.message);
+                        });
+                }
+
+                function listenSalasAbertas() {
+                    if (unsubscribeList) unsubscribeList();
+                    const list = document.getElementById('match-list');
+                    if (!list) return;
+                    unsubscribeList = db.collection('matches')
+                        .where('status', 'in', ['waiting'])
+                        .where('tipo', '==', 'aberta')
+                        .orderBy('createdAt', 'desc')
+                        .onSnapshot(snapshot => {
+                            if (snapshot.empty) {
+                                list.innerHTML = '<li class="empty-msg">Nenhuma sala aberta. Crie uma!</li>';
+                                return;
                             }
-                        } else {
-                            batch.delete(doc.ref);
-                            deletados++;
-                        }
-                    });
-                    if (deletados > 0) {
-                        batch.commit().then(() => {
-                            console.log(`🗑️ ${deletados} salas antigas removidas.`);
-                        }).catch(err => console.error('Erro ao deletar salas antigas:', err));
+                            let html = '';
+                            snapshot.forEach(doc => {
+                                const data = doc.data();
+                                const player1 = data.players.player1;
+                                const player2 = data.players.player2;
+                                const isFull = player2 !== null;
+                                const isCreator = currentUser && player1 && player1.uid === currentUser.uid;
+                                const isPlayer2 = currentUser && player2 && player2.uid === currentUser.uid;
+
+                                let actionHtml = '';
+                                if (!isFull) {
+                                    if (!isCreator && !isPlayer2) {
+                                        actionHtml = `<button class="btn-user pequeno" onclick="window.entrarSalaAberta('${doc.id}')">Entrar</button>`;
+                                    } else {
+                                        actionHtml = `<span style="color: var(--accent-color);">Aguardando oponente...</span>`;
+                                    }
+                                } else {
+                                    actionHtml = `<span style="color: #e74c3c;">Cheia</span>`;
+                                }
+
+                                const player1Nick = player1 ? player1.nick : '?';
+                                const player2Nick = player2 ? player2.nick : 'Aguardando...';
+                                const idade = data.lastActivity ? Math.round((Date.now() - (data.lastActivity.toDate ? data.lastActivity.toDate().getTime() : 0)) / 60000) : '?';
+                                html += `
+                                    <li class="match-item">
+                                        <div class="info">
+                                            <span><strong>${player1Nick}</strong> vs <strong>${player2Nick}</strong></span>
+                                            <span class="status">🟢 Aguardando - ${idade}m atrás</span>
+                                        </div>
+                                        <div>${actionHtml}</div>
+                                    </li>
+                                `;
+                            });
+                            list.innerHTML = html;
+                        }, error => {
+                            console.error('Erro no listener:', error);
+                        });
+                }
+
+                function entrarSalaAberta(matchId) {
+                    if (!currentUser) {
+                        alert('Você não está logado.');
+                        return;
                     }
-                })
-                .catch(err => console.error('Erro ao buscar salas para limpeza:', err));
-        }
+                    const matchRef = db.collection('matches').doc(matchId);
+                    db.runTransaction(transaction => {
+                        return transaction.get(matchRef)
+                            .then(doc => {
+                                const data = doc.data();
+                                if (!data || data.status !== 'waiting' || data.players.player2 !== null) {
+                                    throw new Error('Sala não disponível.');
+                                }
+                                transaction.update(matchRef, {
+                                    'players.player2': { uid: currentUser.uid, nick: currentNick },
+                                    status: 'playing',
+                                    lastActivity: firebase.firestore.FieldValue.serverTimestamp()
+                                });
+                            });
+                    })
+                    .then(() => {
+                        window.location.href = `game_online.html?matchId=${matchId}`;
+                    })
+                    .catch(err => {
+                        alert('Erro ao entrar: ' + err.message);
+                        console.error(err);
+                    });
+                }
 
-        function logout() {
-            auth.signOut().then(() => {
-                window.location.href = 'index.html';
-            });
-        }
+                // --- 7.5 Ver Cartas ---
+                function verCartas() {
+                    const modal = document.getElementById('modal-cartas');
+                    const grid = document.getElementById('card-grid');
+                    grid.innerHTML = '';
+                    if (typeof ALL_CARDS !== 'undefined' && ALL_CARDS.length) {
+                        ALL_CARDS.forEach(carta => {
+                            const div = document.createElement('div');
+                            div.className = 'collection-card';
+                            let html = `<div class="collection-img-placeholder">🃏</div>`;
+                            html += `<div class="collection-info">`;
+                            html += `<div class="card-name">${carta.nome}</div>`;
+                            html += `<div class="card-type">${carta.tipo}</div>`;
+                            if (carta.tipo === 'monstro') {
+                                html += `<div class="card-stats">ATK ${carta.atk} | DEF ${carta.def}</div>`;
+                            }
+                            if (carta.descricao) {
+                                html += `<div class="card-desc">${carta.descricao}</div>`;
+                            }
+                            html += `</div>`;
+                            div.innerHTML = html;
+                            grid.appendChild(div);
+                        });
+                    } else {
+                        grid.innerHTML = '<p class="empty-msg">Nenhuma carta disponível.</p>';
+                    }
+                    abrirModal('modal-cartas');
+                }
 
-        // ========== CARREGAR CARTAS ==========
-        function carregarCards() {
-            if (typeof ALL_CARDS === 'undefined') {
-                const script = document.createElement('script');
-                script.src = 'js/cards.js';
-                document.head.appendChild(script);
-                script.onload = () => {
-                    console.log('Cartas carregadas.');
-                };
+                // --- 7.6 Limpeza de salas antigas ---
+                function limparSalasAntigas() {
+                    const limite = 30 * 60 * 1000;
+                    const agora = Date.now();
+                    db.collection('matches')
+                        .where('status', 'in', ['waiting', 'playing'])
+                        .get()
+                        .then(snapshot => {
+                            const batch = db.batch();
+                            let deletados = 0;
+                            snapshot.forEach(doc => {
+                                const data = doc.data();
+                                let timestamp = data.lastActivity || data.createdAt;
+                                if (timestamp) {
+                                    const ts = timestamp.toDate ? timestamp.toDate().getTime() : timestamp;
+                                    const idade = agora - ts;
+                                    if (idade > limite) {
+                                        batch.delete(doc.ref);
+                                        deletados++;
+                                    }
+                                } else {
+                                    batch.delete(doc.ref);
+                                    deletados++;
+                                }
+                            });
+                            if (deletados > 0) {
+                                batch.commit().then(() => {
+                                    console.log(`🗑️ ${deletados} salas antigas removidas.`);
+                                }).catch(err => console.error('Erro ao deletar salas antigas:', err));
+                            }
+                        })
+                        .catch(err => console.error('Erro ao buscar salas para limpeza:', err));
+                }
+
+                // ============================================================
+                // 8. EXPOR FUNÇÕES GLOBALMENTE (para onclick nos botões)
+                // ============================================================
+                window.abrirModalIA = abrirModalIA;
+                window.iniciarIA = iniciarIA;
+                window.matchmaking = matchmaking;
+                window.abrirModalCriarSala = abrirModalCriarSala;
+                window.abrirModalEntrarSala = abrirModalEntrarSala;
+                window.criarSalaComCodigo = criarSalaComCodigo;
+                window.entrarPorCodigo = entrarPorCodigo;
+                window.criarSalaAberta = criarSalaAberta;
+                window.entrarSalaAberta = entrarSalaAberta;
+                window.verCartas = verCartas;
+                window.fecharModal = fecharModal;
+
+                // ============================================================
+                // 9. INICIALIZAÇÃO
+                // ============================================================
+                console.log('✅ Lobby inicializado com sucesso!');
+                // Renderiza a seção inicial (Jogar)
+                renderJogar();
             }
-        }
-        carregarCards();
 
-        // Expor funções globalmente
-        window.abrirModalIA = abrirModalIA;
-        window.iniciarIA = iniciarIA;
-        window.matchmaking = matchmaking;
-        window.abrirModalCriarSala = abrirModalCriarSala;
-        window.abrirModalEntrarSala = abrirModalEntrarSala;
-        window.criarSalaComCodigo = criarSalaComCodigo;
-        window.entrarPorCodigo = entrarPorCodigo;
-        window.criarSalaAberta = criarSalaAberta;
-        window.entrarSalaAberta = entrarSalaAberta;
-        window.verCartas = verCartas;
-        window.logout = logout;
-        window.fecharModal = fecharModal;
+            // Tenta iniciar imediatamente; se falhar, tenta novamente
+            try {
+                iniciarLobby();
+            } catch (e) {
+                console.warn('Erro ao iniciar lobby, tentando novamente em 500ms', e);
+                setTimeout(iniciarLobby, 500);
+            }
+        });
     </script>
 </body>
 </html>

@@ -1,57 +1,391 @@
-.lobby-container {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 20px;
+/* ============================================================
+   LAYOUT DO LOBBY - BASEADO NO ESTILO DO BOOKLY
+   ============================================================ */
+
+:root {
+    --bg-sidebar: #141414;
+    --bg-main: #1a1a2e;
+    --bg-card: #16213e;
+    --text-primary: #ffffff;
+    --text-secondary: #b0b0b0;
+    --border-color: #2a2a3a;
+    --shadow: 0 8px 24px rgba(0,0,0,0.4);
+    --hover-bg: #2a2a3a;
+    --accent-color: #8e2de2; /* Roxo do Carddia */
+    --accent-hover: #5b1a8a;
 }
-.lobby-header {
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    line-height: 1.6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ===== LAYOUT PRINCIPAL ===== */
+.user-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* ===== SIDEBAR (Estilo Bookly) ===== */
+.sidebar-user {
+    width: 280px;
+    min-width: 280px;
+    background: var(--bg-sidebar);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(255,255,255,0.05);
+    transition: width 0.3s ease, min-width 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+    opacity: 1;
+}
+
+.sidebar-user.collapsed {
+    width: 0;
+    min-width: 0;
+    flex-shrink: 1;
+    margin: 0;
+    opacity: 0;
+    border-right: none;
+    padding: 0;
+    overflow: hidden;
+}
+
+.sidebar-toggle {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 20;
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    line-height: 1;
+    transition: background 0.2s;
+}
+
+.sidebar-toggle:hover {
+    background: var(--accent-hover);
+}
+
+.user-header {
+    padding: 24px 20px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.logo-sidebar {
+    margin-bottom: 12px;
+}
+.logo-sidebar img {
+    display: block;
+    width: 180px;
+    height: auto;
+    margin: 0 auto;
+    filter: brightness(0) invert(1); /* Deixa a logo branca */
+}
+
+.avatar {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 12px;
+    border: 3px solid var(--accent-color);
+    background: #2a2a3a;
+}
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.user-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    display: block;
+}
+.user-apelido {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 2px;
+}
+
+.menu-user {
+    flex: 1;
+    padding: 20px 0;
+}
+.menu-user ul {
+    list-style: none;
+}
+.menu-user li {
+    margin-bottom: 2px;
+}
+.menu-user a {
+    display: block;
+    padding: 12px 24px;
+    margin: 2px 12px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.menu-user a:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+.menu-user a.active {
+    background: var(--accent-color);
+    color: #fff;
+}
+
+.sidebar-footer {
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    margin-top: auto;
+}
+
+/* ===== MAIN CONTENT ===== */
+.main-user {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-main);
+    overflow: hidden;
+}
+
+.topbar-user {
+    background: var(--bg-sidebar);
+    padding: 12px 24px 12px 70px;
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    flex-shrink: 0;
+    min-height: 60px;
 }
-.lobby-menu .menu-card {
-    background: #34495e;
-    padding: 20px;
-    border-radius: 16px;
-    width: 200px;
-    text-align: center;
+.topbar-user h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+    background: linear-gradient(135deg, var(--accent-color), #f5a623);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.main-content-wrapper {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.content-left {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 28px;
+}
+
+/* ===== CARDS (Estilo Bookly) ===== */
+.card-user {
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    transition: box-shadow 0.3s ease;
+}
+.card-user:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+}
+.card-user h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--text-primary);
+    letter-spacing: -0.2px;
+}
+
+/* ===== BOTÕES ===== */
+.btn-user {
+    background: var(--accent-color);
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: 0.3s;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: all 0.2s;
 }
-.lobby-menu .menu-card:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+.btn-user:hover {
+    background: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(142, 45, 226, 0.3);
 }
-.lobby-menu .menu-card .icon {
-    font-size: 3em;
-    margin-bottom: 10px;
+.btn-user.secundario {
+    background: var(--bg-card);
+    color: var(--text-secondary);
 }
-.match-list-container {
-    margin-top: 30px;
+.btn-user.secundario:hover {
+    background: var(--hover-bg);
+}
+
+/* ===== LISTA DE SALAS (Matchmaking) ===== */
+.match-list {
+    list-style: none;
+    padding: 0;
 }
 .match-item {
-    background: #2c3e50;
+    background: var(--bg-sidebar);
     padding: 15px 20px;
     border-radius: 8px;
     margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border: 1px solid var(--border-color);
 }
-.modal-cards .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
-    max-height: 500px;
-    overflow-y: auto;
+.match-item .info {
+    display: flex;
+    flex-direction: column;
 }
-.modal-cards .card-item {
-    background: white;
-    color: #2c3e50;
-    border-radius: 8px;
-    padding: 8px;
-    text-align: center;
+.match-item .info .status {
     font-size: 0.8em;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    color: var(--text-secondary);
+}
+.empty-msg {
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 20px;
+}
+
+/* ===== COLEÇÃO DE CARTAS ===== */
+.collection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+}
+.collection-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.collection-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    border-color: var(--accent-color);
+}
+.collection-img-placeholder {
+    width: 100%;
+    height: 150px;
+    background: #2a2a3a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: var(--text-secondary);
+}
+.collection-info {
+    padding: 15px;
+    text-align: center;
+}
+.collection-info .card-name {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+.collection-info .card-type {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+.collection-info .card-stats {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-weight: 600;
+    color: var(--accent-color);
+}
+.collection-info .card-desc {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* ===== MODAIS (Já existentes no base.css, mas reforçando o estilo) ===== */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+    z-index: 1000; backdrop-filter: blur(2px);
+}
+.modal-overlay.hidden { display: none; }
+.modal-content {
+    background: #ecf0f1; color: #2c3e50; padding: 30px; border-radius: 12px;
+    min-width: 350px; max-width: 500px; width: 90%;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+}
+.modal-field { margin-bottom: 15px; }
+.modal-field label { display: block; margin-bottom: 5px; font-weight: bold; }
+.modal-field input, .modal-field select {
+    width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid #95a5a6;
+    font-size: 1em; background: white; color: #2c3e50;
+}
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-actions button { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.btn-primary { background: #27ae60; color: white; }
+.btn-secondary { background: #3498db; color: white; }
+
+/* Responsivo */
+@media (max-width: 992px) {
+    .sidebar-user {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        box-shadow: 2px 0 12px rgba(0,0,0,0.3);
+        transition: transform 0.3s ease;
+        transform: translateX(0);
+        width: 280px;
+        min-width: 280px;
+        opacity: 1;
+    }
+    .sidebar-user.collapsed {
+        transform: translateX(-100%);
+        width: 280px;
+        min-width: 280px;
+        opacity: 1;
+        margin: 0;
+        padding: 0;
+        overflow: visible;
+    }
+    .topbar-user {
+        padding-left: 70px;
+    }
 }

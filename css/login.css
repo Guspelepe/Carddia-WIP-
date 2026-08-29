@@ -1,0 +1,261 @@
+/* ========================================
+   LOGIN CARDDIA - ESTILO BOOKLY
+   ======================================== */
+
+/* Reset específico para o Login */
+body.login-page {
+    background: rgb(3, 2, 65); /* Cor de fundo base (Azul escuro) */
+    font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100vh;
+}
+
+.landing-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Coluna da Imagem (Esquerda) */
+.col-imagem {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    /* Coloca a imagem de fundo (usaremos a logo como base visual) */
+    background-image: url('../img/logo.png'); 
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: #1a2a3a; /* Cor de fundo da imagem */
+}
+
+/* Gradiente da Direita para a Esquerda */
+.col-imagem::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        rgba(3, 2, 65, 0) 30%, 
+        rgba(3, 2, 65, 0.8) 70%,
+        rgba(3, 2, 65, 1) 100%
+    );
+    pointer-events: none;
+}
+
+/* Frase sobre a imagem */
+.frase-container {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    width: 100%;
+    padding: 0 40px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#frase-destaque {
+    color: #ffffff;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    font-style: italic;
+    line-height: 1.5;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+    max-width: 80%;
+    margin: 0 auto;
+}
+
+/* Coluna do Formulário (Direita) */
+.col-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgb(3, 2, 65); /* Cor da coluna direita */
+    padding: 20px;
+    position: relative;
+}
+
+/* Logo acima da caixa */
+.logo-login {
+    width: 100%;
+    max-width: 350px;
+    height: auto;
+    margin-bottom: 20px;
+    object-fit: contain;
+}
+
+/* Caixa de Login (Card) */
+.card {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    padding: 40px 36px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+
+/* Linha decorativa no topo (Roxo) */
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #500465, #ab47bc, #500465);
+}
+
+.card h1 {
+    color: #1a1a2e;
+    font-weight: 700;
+    font-size: 1.8rem;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+}
+
+.card h1 span {
+    color: #500465; /* Roxo */
+}
+
+.card .subtitulo {
+    color: #6b6b80;
+    font-size: 0.9rem;
+    margin-bottom: 28px;
+}
+
+/* Formulários */
+.auth-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+}
+
+.auth-container.hidden {
+    display: none;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.campo label {
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #3d3d54;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.campo input {
+    padding: 12px 16px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: #f8f8fc;
+    color: #1a1a2e;
+    width: 100%;
+    transition: all 0.25s;
+    box-sizing: border-box;
+}
+
+.campo input:focus {
+    border-color: #500465;
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(80, 4, 101, 0.15);
+    background: #fff;
+}
+
+/* Botão Principal (Entrar) */
+.btn-entrar {
+    background: linear-gradient(135deg, #500465, #7b1fa2);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 4px;
+    width: 100%;
+}
+
+.btn-entrar:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 24px rgba(80, 4, 101, 0.3);
+}
+
+/* Botão Secundário (Registrar) */
+.btn-registrar {
+    background: transparent;
+    color: #500465;
+    border: 1.5px solid #500465;
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 12px;
+    width: 100%;
+}
+
+.btn-registrar:hover {
+    background: #500465;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(80, 4, 101, 0.25);
+}
+
+/* Mensagens de erro */
+.error-msg {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    background: rgba(231, 76, 60, 0.1);
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 5px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .col-imagem {
+        display: none;
+    }
+    .col-form {
+        width: 100%;
+        padding: 20px;
+    }
+    .card {
+        max-width: 100%;
+        padding: 32px 24px;
+    }
+    .logo-login {
+        max-width: 250px;
+    }
+}
